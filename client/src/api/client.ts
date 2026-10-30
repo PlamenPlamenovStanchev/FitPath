@@ -2,6 +2,40 @@ export type FitPathUser = {
   id: string;
   role: "USER" | "TRAINER" | "ADMIN";
   onboardingCompleted: boolean;
+  profile: FitPathProfile | null;
+};
+
+export type ActivityLevel =
+  "SEDENTARY" | "LIGHTLY_ACTIVE" | "MODERATELY_ACTIVE" | "VERY_ACTIVE";
+
+export type FitnessGoal =
+  "LOSE_WEIGHT" | "BUILD_MUSCLE" | "IMPROVE_FITNESS" | "MAINTAIN_CONDITION";
+
+export type FitPathProfile = {
+  age: number | null;
+  heightCm: number | null;
+  currentWeightKg: number | null;
+  activityLevel: ActivityLevel | null;
+  fitnessGoal: FitnessGoal | null;
+};
+
+export type OnboardingPayload = {
+  age: number;
+  heightCm: number;
+  currentWeightKg: number;
+  activityLevel: ActivityLevel;
+  fitnessGoal: FitnessGoal;
+};
+
+export type OnboardingResponse = {
+  user: Pick<FitPathUser, "id" | "role" | "onboardingCompleted">;
+  profile: {
+    age: number;
+    heightCm: number;
+    currentWeightKg: number;
+    activityLevel: ActivityLevel;
+    fitnessGoal: FitnessGoal;
+  };
 };
 
 type GetToken = () => Promise<string | null>;
@@ -51,5 +85,11 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
   return {
     getMe: (signal?: AbortSignal) =>
       request<FitPathUser>("/api/me", { signal }),
+    completeOnboarding: (payload: OnboardingPayload) =>
+      request<OnboardingResponse>("/api/me/onboarding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
   };
 }

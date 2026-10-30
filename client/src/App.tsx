@@ -7,6 +7,7 @@ import {
   createAuthenticatedApiClient,
   type FitPathUser,
 } from "./api/client";
+import { OnboardingWizard } from "./components/OnboardingWizard";
 
 function PublicHome() {
   return (
@@ -95,6 +96,23 @@ function ProtectedHome() {
 
   if (!isSignedIn) {
     return <Navigate replace to="/sign-in" />;
+  }
+
+  if (!error && !user) {
+    return <LoadingState />;
+  }
+
+  if (user && !user.onboardingCompleted && user.role === "USER") {
+    return (
+      <OnboardingWizard
+        completeOnboarding={apiClient.completeOnboarding}
+        onCompleted={() =>
+          setUser((current) =>
+            current ? { ...current, onboardingCompleted: true } : current,
+          )
+        }
+      />
+    );
   }
 
   return (

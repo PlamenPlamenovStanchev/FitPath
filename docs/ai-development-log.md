@@ -241,3 +241,62 @@ database migration.
 
 Clerk remains the source of truth for identity and sessions, while PostgreSQL
 stores only FitPath-specific user data.
+
+---
+
+## Day 1 - User Profile / Onboarding
+
+### Date:
+
+2026-10-30
+
+### Development Day:
+
+Day 1
+
+### Module:
+
+User Profile / Onboarding
+
+### Task:
+
+First-login onboarding wizard.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Require a new authenticated FitPath user to provide their personal details,
+activity level, and fitness goal before accessing the dashboard, while keeping
+the persisted onboarding status authoritative.
+
+### Generated Result:
+
+- Added authenticated `PUT /api/me/onboarding` validation and profile upsert.
+- Updated `GET /api/me` to include the current profile when present.
+- Added a responsive three-step React onboarding wizard and persisted-state
+  routing from the authenticated application shell.
+- Used an atomic database transaction to save the profile and complete
+  onboarding together.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — the API and frontend compile and build successfully. Live Clerk and
+Neon verification remains a manual environment-dependent check.
+
+### Lessons / Observations:
+
+The existing unique `profiles.user_id` constraint makes the onboarding write a
+safe upsert without a schema change.
