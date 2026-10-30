@@ -170,3 +170,74 @@ build all completed successfully.
 - The first Vite build attempt was blocked by the restricted execution
   environment while inspecting parent path metadata. The same build passed
   when run with the required filesystem permission.
+
+---
+
+## Day 1 - Authentication and Authorization
+
+### Date:
+
+2026-10-30
+
+### Development Day:
+
+Day 1
+
+### Module:
+
+Authentication and Authorization
+
+### Task:
+
+Clerk authentication and local user synchronization.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Authenticate users with Clerk and safely synchronize verified Clerk identities
+to existing FitPath users without changing the database schema.
+
+### Prompt:
+
+Implement Clerk authentication in the React SPA and Express API, add protected
+`/api/me` synchronization using the existing unique `clerk_user_id` constraint,
+prepare server-side role authorization, and keep Clerk identity data separate
+from FitPath application data.
+
+### Generated Result:
+
+- Added Clerk provider, sign-in/sign-up routes, a public landing page, and a
+  protected application shell with a Clerk account control.
+- Added an in-memory authenticated API helper using Clerk's supported session
+  token API; tokens are not stored in browser storage.
+- Added Clerk Express middleware, reusable authenticated-request and role
+  authorization helpers, and `GET /api/me`.
+- Implemented race-safe local user creation with `ON CONFLICT DO NOTHING` and
+  lookup by the verified Clerk user ID.
+- Configured Vite to load browser-safe environment variables from the root
+  `.env` file and documented the optional browser API origin.
+- Added `react-router-dom` for the requested SPA routes.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — the requested authentication, local synchronization, and role
+authorization preparation were implemented without creating or changing a
+database migration.
+
+### Lessons / Observations:
+
+Clerk remains the source of truth for identity and sessions, while PostgreSQL
+stores only FitPath-specific user data.

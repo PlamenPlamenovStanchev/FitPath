@@ -1,15 +1,20 @@
+import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
 import express from "express";
 import { serverEnv } from "./config/env.js";
+import { meRouter } from "./routes/me.js";
 
 const app = express();
 
+app.use(clerkMiddleware());
 app.use(cors({ origin: serverEnv.clientOrigin }));
 app.use(express.json());
 
 app.get("/health", (_request, response) => {
   response.json({ status: "ok" });
 });
+
+app.use("/api", meRouter);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);
