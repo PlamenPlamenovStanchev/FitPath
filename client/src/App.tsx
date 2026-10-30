@@ -61,9 +61,10 @@ function ProtectedHome() {
     }
 
     let isCurrent = true;
+    const controller = new AbortController();
 
     void apiClient
-      .getMe()
+      .getMe(controller.signal)
       .then((response) => {
         if (isCurrent) {
           setUser(response);
@@ -84,6 +85,7 @@ function ProtectedHome() {
 
     return () => {
       isCurrent = false;
+      controller.abort();
     };
   }, [apiClient, isLoaded, isSignedIn]);
 

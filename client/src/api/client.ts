@@ -26,12 +26,14 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       throw new ApiRequestError("Your session is no longer available.", 401);
     }
 
+    // The session may have changed while getToken() was pending.
+    init.signal?.throwIfAborted();
+    const headers = new Headers(init.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+
     const response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
-      headers: {
-        ...init.headers,
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -47,6 +49,7 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
   }
 
   return {
-    getMe: () => request<FitPathUser>("/api/me"),
+    getMe: (signal?: AbortSignal) =>
+      request<FitPathUser>("/api/me", { signal }),
   };
 }
