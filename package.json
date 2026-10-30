@@ -12,6 +12,7 @@
     "build": "npm run build --workspaces",
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces",
+    "test:unit": "node --test client/src/utils/bmi.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "e2e": "cypress open",

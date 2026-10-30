@@ -8,6 +8,7 @@ import {
   type FitPathUser,
 } from "./api/client";
 import { OnboardingWizard } from "./components/OnboardingWizard";
+import { BmiCard } from "./components/BmiCard";
 
 function PublicHome() {
   return (
@@ -153,6 +154,12 @@ function ProtectedHome() {
             </p>
           )}
         </section>
+        {user && !error && (
+          <BmiCard
+            initialHeightCm={user.profile?.heightCm ?? null}
+            initialWeightKg={user.profile?.currentWeightKg ?? null}
+          />
+        )}
       </div>
     </main>
   );

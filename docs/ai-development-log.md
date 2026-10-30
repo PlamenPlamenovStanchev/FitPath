@@ -300,3 +300,61 @@ Neon verification remains a manual environment-dependent check.
 
 The existing unique `profiles.user_id` constraint makes the onboarding write a
 safe upsert without a schema change.
+
+---
+
+## Day 1 - BMI Calculator
+
+### Date:
+
+2026-10-30
+
+### Development Day:
+
+Day 1
+
+### Module:
+
+User Profile / Dashboard
+
+### Task:
+
+Informational BMI calculator.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Provide an informational dashboard BMI calculation using the authenticated
+user's stored height and current weight without changing profile data.
+
+### Generated Result:
+
+- Added a reusable BMI calculation utility that validates finite positive
+  inputs and rounds to one decimal place.
+- Added a dashboard BMI card with temporary, editable height and weight
+  values initialized from the user profile.
+- Added focused unit tests using Node's built-in test runner.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run test:unit` passed (5 tests).
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — the informational BMI calculator, focused tests, and production
+build completed successfully.
+
+### Lessons / Observations:
+
+The calculator deliberately remains local UI state; it does not write profile
+or progress data.
