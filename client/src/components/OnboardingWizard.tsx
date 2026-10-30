@@ -5,6 +5,7 @@ import {
   type ActivityLevel,
   type FitnessGoal,
   type OnboardingPayload,
+  type OnboardingResponse,
 } from "../api/client";
 
 type FormValues = {
@@ -19,8 +20,10 @@ type FieldName = keyof FormValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 type OnboardingWizardProps = {
-  completeOnboarding: (payload: OnboardingPayload) => Promise<unknown>;
-  onCompleted: () => void;
+  completeOnboarding: (
+    payload: OnboardingPayload,
+  ) => Promise<OnboardingResponse>;
+  onCompleted: (response: OnboardingResponse) => void;
 };
 
 const activityOptions: ReadonlyArray<{ value: ActivityLevel; label: string }> =
@@ -114,14 +117,14 @@ export function OnboardingWizard({
     setServerError(null);
 
     try {
-      await completeOnboarding({
+      const onboardingResponse = await completeOnboarding({
         age: Number(values.age),
         heightCm: Number(values.heightCm),
         currentWeightKg: Number(values.currentWeightKg),
         activityLevel: values.activityLevel,
         fitnessGoal: values.fitnessGoal,
       });
-      onCompleted();
+      onCompleted(onboardingResponse);
     } catch (error: unknown) {
       setServerError(
         error instanceof ApiRequestError

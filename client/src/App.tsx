@@ -108,9 +108,15 @@ function ProtectedHome() {
     return (
       <OnboardingWizard
         completeOnboarding={apiClient.completeOnboarding}
-        onCompleted={() =>
+        onCompleted={(onboardingResponse) =>
           setUser((current) =>
-            current ? { ...current, onboardingCompleted: true } : current,
+            current
+              ? {
+                  ...current,
+                  ...onboardingResponse.user,
+                  profile: onboardingResponse.profile,
+                }
+              : current,
           )
         }
       />
