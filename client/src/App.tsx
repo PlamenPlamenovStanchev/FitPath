@@ -7,8 +7,9 @@ import {
   createAuthenticatedApiClient,
   type FitPathUser,
 } from "./api/client";
-import { OnboardingWizard } from "./components/OnboardingWizard";
+import { AuthenticatedDashboard } from "./components/AuthenticatedDashboard";
 import { BmiCard } from "./components/BmiCard";
+import { OnboardingWizard } from "./components/OnboardingWizard";
 
 function PublicHome() {
   return (
@@ -116,6 +117,10 @@ function ProtectedHome() {
     );
   }
 
+  if (!error) {
+    return <AuthenticatedDashboard user={user!} />;
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-4xl">
@@ -175,7 +180,7 @@ function App() {
   return (
     <Routes>
       <Route
-        path="/"
+        path="/*"
         element={isSignedIn ? <ProtectedHome /> : <PublicHome />}
       />
       <Route

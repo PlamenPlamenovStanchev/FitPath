@@ -1,0 +1,253 @@
+import { UserButton } from "@clerk/react";
+import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+
+import type {
+  ActivityLevel,
+  FitPathProfile,
+  FitPathUser,
+  FitnessGoal,
+} from "../api/client";
+import { calculateBmi } from "../utils/bmi";
+import { BmiCard } from "./BmiCard";
+
+type AuthenticatedDashboardProps = { user: FitPathUser };
+
+const activityLevelLabels: Record<ActivityLevel, string> = {
+  SEDENTARY: "Sedentary",
+  LIGHTLY_ACTIVE: "Lightly active",
+  MODERATELY_ACTIVE: "Moderately active",
+  VERY_ACTIVE: "Very active",
+};
+
+const fitnessGoalLabels: Record<FitnessGoal, string> = {
+  LOSE_WEIGHT: "Lose weight",
+  BUILD_MUSCLE: "Build muscle",
+  IMPROVE_FITNESS: "Improve fitness",
+  MAINTAIN_CONDITION: "Maintain current condition",
+};
+
+const navigation = [
+  { to: "/", label: "Dashboard", end: true },
+  { to: "/plans", label: "My Plans", end: false },
+  { to: "/coach", label: "My Coach", end: false },
+  { to: "/progress", label: "Progress", end: false },
+  { to: "/profile", label: "Profile", end: false },
+] as const;
+
+function displayValue(value: number | null, unit: string): string {
+  return value === null ? "Not available" : `${value} ${unit}`;
+}
+
+function getCurrentBmi(profile: FitPathProfile | null): string {
+  if (
+    !profile ||
+    profile.heightCm === null ||
+    profile.currentWeightKg === null
+  ) {
+    return "Not available";
+  }
+
+  try {
+    return calculateBmi(profile.currentWeightKg, profile.heightCm).toFixed(1);
+  } catch {
+    return "Not available";
+  }
+}
+
+function labelActivityLevel(value: ActivityLevel | null): string {
+  return value === null ? "Not available" : activityLevelLabels[value];
+}
+
+function labelFitnessGoal(value: FitnessGoal | null): string {
+  return value === null ? "Not available" : fitnessGoalLabels[value];
+}
+
+export function AuthenticatedDashboard({ user }: AuthenticatedDashboardProps) {
+  return (
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="border-b border-slate-800 pb-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <NavLink className="group" to="/" aria-label="FitPath dashboard">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">
+                Your route to better habits
+              </p>
+              <h1 className="mt-1 text-3xl font-bold tracking-tight group-hover:text-emerald-200">
+                FitPath
+              </h1>
+            </NavLink>
+            <UserButton />
+          </div>
+          <nav className="mt-5 overflow-x-auto" aria-label="Primary navigation">
+            <ul className="flex min-w-max gap-1">
+              {navigation.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    className={({ isActive }) =>
+                      `block rounded-md px-3 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${
+                        isActive
+                          ? "bg-emerald-400 text-slate-950"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`
+                    }
+                    end={item.end}
+                    to={item.to}
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </header>
+
+        <Routes>
+          <Route index element={<DashboardPage user={user} />} />
+          <Route
+            path="profile"
+            element={<ProfilePage profile={user.profile} />}
+          />
+          <Route
+            path="plans"
+            element={
+              <PlaceholderPage
+                title="My Plans"
+                description="Training plans will be available in a future FitPath module."
+              />
+            }
+          />
+          <Route
+            path="coach"
+            element={
+              <PlaceholderPage
+                title="My Coach"
+                description="Coach connections are not part of the Day 1 dashboard."
+              />
+            }
+          />
+          <Route
+            path="progress"
+            element={
+              <PlaceholderPage
+                title="Progress"
+                description="Progress tracking will be available in a future FitPath module."
+              />
+            }
+          />
+          <Route path="*" element={<Navigate replace to="/" />} />
+        </Routes>
+      </div>
+    </main>
+  );
+}
+
+function DashboardPage({ user }: AuthenticatedDashboardProps) {
+  const profile = user.profile;
+
+  return (
+    <section className="py-8 sm:py-10">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
+          Dashboard
+        </p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight">
+          Welcome to your FitPath dashboard
+        </h2>
+        <p className="mt-3 max-w-2xl text-slate-300">
+          Your current fitness details are ready whenever you need a quick
+          check-in.
+        </p>
+      </div>
+
+      <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard
+          label="Fitness goal"
+          value={labelFitnessGoal(profile?.fitnessGoal ?? null)}
+        />
+        <SummaryCard
+          label="Activity level"
+          value={labelActivityLevel(profile?.activityLevel ?? null)}
+        />
+        <SummaryCard
+          label="Current weight"
+          value={displayValue(profile?.currentWeightKg ?? null, "kg")}
+        />
+        <SummaryCard label="Current BMI" value={getCurrentBmi(profile)} />
+      </dl>
+
+      <BmiCard
+        initialHeightCm={profile?.heightCm ?? null}
+        initialWeightKg={profile?.currentWeightKg ?? null}
+      />
+    </section>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+      <dt className="text-sm text-slate-400">{label}</dt>
+      <dd className="mt-2 text-lg font-semibold text-slate-100">{value}</dd>
+    </div>
+  );
+}
+
+function ProfilePage({ profile }: { profile: FitPathProfile | null }) {
+  const details = [
+    [
+      "Age",
+      !profile || profile.age === null
+        ? "Not available"
+        : `${profile.age} years`,
+    ],
+    ["Height", displayValue(profile?.heightCm ?? null, "cm")],
+    ["Weight", displayValue(profile?.currentWeightKg ?? null, "kg")],
+    ["Activity level", labelActivityLevel(profile?.activityLevel ?? null)],
+    ["Fitness goal", labelFitnessGoal(profile?.fitnessGoal ?? null)],
+  ] as const;
+
+  return (
+    <section className="py-8 sm:py-10">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
+        Profile
+      </p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight">Your profile</h2>
+      <p className="mt-3 max-w-2xl text-slate-300">
+        These are the details you supplied during onboarding.
+      </p>
+      <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+        {details.map(([label, value]) => (
+          <div
+            className="rounded-xl border border-slate-800 bg-slate-900 p-5"
+            key={label}
+          >
+            <dt className="text-sm text-slate-400">{label}</dt>
+            <dd className="mt-2 text-lg font-semibold text-slate-100">
+              {value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function PlaceholderPage({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <section className="py-8 sm:py-10">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
+        Coming later
+      </p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight">{title}</h2>
+      <div className="mt-8 rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
+        {description}
+      </div>
+    </section>
+  );
+}

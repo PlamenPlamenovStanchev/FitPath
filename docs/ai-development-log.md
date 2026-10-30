@@ -358,3 +358,61 @@ build completed successfully.
 
 The calculator deliberately remains local UI state; it does not write profile
 or progress data.
+
+---
+
+## Day 1 - Authenticated User Dashboard
+
+### Date:
+
+2026-10-30
+
+### Development Day:
+
+Day 1
+
+### Module:
+
+Authenticated User Dashboard
+
+### Task:
+
+Finish the Day 1 authenticated USER dashboard shell.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Create a responsive dashboard shell using the existing authenticated user,
+completed profile, and BMI calculator data without adding Day 2 functionality.
+
+### Generated Result:
+
+- Added an authenticated header with FitPath branding, Clerk account control,
+  and navigation.
+- Added working Dashboard and Profile views with user-friendly enum labels.
+- Added placeholder states for My Plans, My Coach, and Progress.
+- Displayed profile summary values, current BMI, and the existing BMI card on
+  the dashboard.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — the Day 1 dashboard shell builds successfully without adding
+training-plan, coach, or progress functionality.
+
+### Lessons / Observations:
+
+The profile data returned by the existing authenticated endpoint is sufficient
+for the Day 1 dashboard; no backend API changes were needed.
