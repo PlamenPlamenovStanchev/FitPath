@@ -321,3 +321,77 @@ export const workoutExercises = pgTable(
     ),
   ],
 );
+
+export const progressEntries = pgTable(
+  "progress_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    weightKg: numeric("weight_kg", { precision: 5, scale: 2 }).notNull(),
+    bmi: numeric("bmi", { precision: 5, scale: 2 }).notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("progress_entries_user_recorded_at_idx").on(
+      table.userId,
+      table.recordedAt,
+    ),
+    check("progress_entries_weight_positive", sql`${table.weightKg} > 0`),
+    check("progress_entries_bmi_positive", sql`${table.bmi} > 0`),
+  ],
+);
+
+export const workoutCompletions = pgTable(
+  "workout_completions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    workoutDayId: uuid("workout_day_id")
+      .notNull()
+      .references(() => workoutDays.id, { onDelete: "cascade" }),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" })
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("workout_completions_user_day_unique").on(
+      table.userId,
+      table.workoutDayId,
+    ),
+    index("workout_completions_user_completed_at_idx").on(
+      table.userId,
+      table.completedAt,
+    ),
+  ],
+);
+
+export const progressPhotos = pgTable(
+  "progress_photos",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    objectKey: text("object_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("progress_photos_user_created_at_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
+    check(
+      "progress_photos_object_key_not_blank",
+      sql`length(btrim(${table.objectKey})) > 0`,
+    ),
+  ],
+);
