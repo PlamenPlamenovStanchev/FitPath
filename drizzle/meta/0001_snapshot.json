@@ -1,0 +1,594 @@
+{
+  "id": "5513fac1-373d-4a97-982f-016441ac1fe1",
+  "prevId": "d33904ac-744b-4a90-a548-ed1859355f27",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "age": {
+          "name": "age",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height_cm": {
+          "name": "height_cm",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_weight_kg": {
+          "name": "current_weight_kg",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity_level": {
+          "name": "activity_level",
+          "type": "activity_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fitness_goal": {
+          "name": "fitness_goal",
+          "type": "fitness_goal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar_object_key": {
+          "name": "avatar_object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "profiles_user_id_users_id_fk": {
+          "name": "profiles_user_id_users_id_fk",
+          "tableFrom": "profiles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "profiles_user_id_unique": {
+          "name": "profiles_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "profiles_age_range": {
+          "name": "profiles_age_range",
+          "value": "\"profiles\".\"age\" IS NULL OR \"profiles\".\"age\" BETWEEN 13 AND 120"
+        },
+        "profiles_height_range": {
+          "name": "profiles_height_range",
+          "value": "\"profiles\".\"height_cm\" IS NULL OR \"profiles\".\"height_cm\" BETWEEN 50 AND 300"
+        },
+        "profiles_weight_range": {
+          "name": "profiles_weight_range",
+          "value": "\"profiles\".\"current_weight_kg\" IS NULL OR \"profiles\".\"current_weight_kg\" BETWEEN 20 AND 500"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.trainer_applications": {
+      "name": "trainer_applications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "trainer_application_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "specialization": {
+          "name": "specialization",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "biography": {
+          "name": "biography",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "certificate_object_key": {
+          "name": "certificate_object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "trainer_applications_one_pending_per_user_idx": {
+          "name": "trainer_applications_one_pending_per_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"trainer_applications\".\"status\" = 'PENDING'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "trainer_applications_pending_review_idx": {
+          "name": "trainer_applications_pending_review_idx",
+          "columns": [
+            {
+              "expression": "submitted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"trainer_applications\".\"status\" = 'PENDING'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "trainer_applications_user_id_users_id_fk": {
+          "name": "trainer_applications_user_id_users_id_fk",
+          "tableFrom": "trainer_applications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trainer_applications_reviewed_by_users_id_fk": {
+          "name": "trainer_applications_reviewed_by_users_id_fk",
+          "tableFrom": "trainer_applications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "trainer_applications_review_metadata": {
+          "name": "trainer_applications_review_metadata",
+          "value": "(\n        \"trainer_applications\".\"status\" = 'PENDING'\n        AND \"trainer_applications\".\"reviewed_at\" IS NULL\n        AND \"trainer_applications\".\"reviewed_by\" IS NULL\n      ) OR (\n        \"trainer_applications\".\"status\" IN ('APPROVED', 'REJECTED')\n        AND \"trainer_applications\".\"reviewed_at\" IS NOT NULL\n        AND \"trainer_applications\".\"reviewed_by\" IS NOT NULL\n      )"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.trainer_assignments": {
+      "name": "trainer_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "trainer_user_id": {
+          "name": "trainer_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "client_user_id": {
+          "name": "client_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "trainer_assignments_one_active_trainer_per_client_idx": {
+          "name": "trainer_assignments_one_active_trainer_per_client_idx",
+          "columns": [
+            {
+              "expression": "client_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"trainer_assignments\".\"active\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "trainer_assignments_active_trainer_idx": {
+          "name": "trainer_assignments_active_trainer_idx",
+          "columns": [
+            {
+              "expression": "trainer_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"trainer_assignments\".\"active\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "trainer_assignments_trainer_user_id_users_id_fk": {
+          "name": "trainer_assignments_trainer_user_id_users_id_fk",
+          "tableFrom": "trainer_assignments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "trainer_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trainer_assignments_client_user_id_users_id_fk": {
+          "name": "trainer_assignments_client_user_id_users_id_fk",
+          "tableFrom": "trainer_assignments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "client_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "trainer_assignments_distinct_users": {
+          "name": "trainer_assignments_distinct_users",
+          "value": "\"trainer_assignments\".\"trainer_user_id\" <> \"trainer_assignments\".\"client_user_id\""
+        },
+        "trainer_assignments_lifecycle": {
+          "name": "trainer_assignments_lifecycle",
+          "value": "(\n        \"trainer_assignments\".\"active\" = true\n        AND \"trainer_assignments\".\"ended_at\" IS NULL\n      ) OR (\n        \"trainer_assignments\".\"active\" = false\n        AND \"trainer_assignments\".\"ended_at\" IS NOT NULL\n        AND \"trainer_assignments\".\"ended_at\" >= \"trainer_assignments\".\"created_at\"\n      )"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.trainer_profiles": {
+      "name": "trainer_profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialization": {
+          "name": "specialization",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "biography": {
+          "name": "biography",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profile_photo_object_key": {
+          "name": "profile_photo_object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "trainer_profiles_user_id_users_id_fk": {
+          "name": "trainer_profiles_user_id_users_id_fk",
+          "tableFrom": "trainer_profiles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "trainer_profiles_user_id_unique": {
+          "name": "trainer_profiles_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clerk_user_id": {
+          "name": "clerk_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USER'"
+        },
+        "onboarding_completed": {
+          "name": "onboarding_completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "users_role_idx": {
+          "name": "users_role_idx",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_clerk_user_id_unique": {
+          "name": "users_clerk_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clerk_user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.activity_level": {
+      "name": "activity_level",
+      "schema": "public",
+      "values": [
+        "SEDENTARY",
+        "LIGHTLY_ACTIVE",
+        "MODERATELY_ACTIVE",
+        "VERY_ACTIVE"
+      ]
+    },
+    "public.fitness_goal": {
+      "name": "fitness_goal",
+      "schema": "public",
+      "values": [
+        "LOSE_WEIGHT",
+        "BUILD_MUSCLE",
+        "IMPROVE_FITNESS",
+        "MAINTAIN_CONDITION"
+      ]
+    },
+    "public.trainer_application_status": {
+      "name": "trainer_application_status",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "USER",
+        "TRAINER",
+        "ADMIN"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
