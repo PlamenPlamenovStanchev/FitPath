@@ -15,6 +15,13 @@ const fileUploadPolicies = {
       "application/pdf": "pdf",
     },
   },
+  "progress-photos": {
+    allowedMimeTypes: {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    },
+  },
 } as const;
 
 const privateObjectPrefixes = [

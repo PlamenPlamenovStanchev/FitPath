@@ -151,6 +151,15 @@ export type WorkoutCompletionsResponse = {
   completions: WorkoutCompletion[];
 };
 
+export type ProgressPhoto = {
+  id: string;
+  createdAt: string;
+};
+
+export type ProgressPhotosResponse = {
+  photos: ProgressPhoto[];
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -322,5 +331,25 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         `/api/trainer/clients/${clientUserId}/workout-completions`,
         { signal },
       ),
+    getMyProgressPhotos: (signal?: AbortSignal) =>
+      request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
+    uploadProgressPhoto: (photo: File) => {
+      const formData = new FormData();
+      formData.append("photo", photo);
+      return request<{ photo: ProgressPhoto }>("/api/me/progress-photos", {
+        method: "POST",
+        body: formData,
+      }).then((response) => response.photo);
+    },
+    getMyProgressPhoto: (photoId: string) =>
+      requestBlob(`/api/me/progress-photos/${photoId}`),
+    deleteMyProgressPhoto: (photoId: string) =>
+      request<{ id: string }>(`/api/me/progress-photos/${photoId}`, {
+        method: "DELETE",
+      }).then(() => undefined),
+    getTrainerClientProgressPhotos: (clientUserId: string, signal?: AbortSignal) =>
+      request<ProgressPhotosResponse>(`/api/trainer/clients/${clientUserId}/progress-photos`, { signal }),
+    getTrainerClientProgressPhoto: (clientUserId: string, photoId: string) =>
+      requestBlob(`/api/trainer/clients/${clientUserId}/progress-photos/${photoId}`),
   };
 }

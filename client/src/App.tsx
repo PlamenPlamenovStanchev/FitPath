@@ -146,6 +146,10 @@ function ProtectedHome() {
         getMyWorkoutCompletions={apiClient.getMyWorkoutCompletions}
         completeWorkoutDay={apiClient.completeWorkoutDay}
         undoWorkoutDayCompletion={apiClient.undoWorkoutDayCompletion}
+        getMyProgressPhotos={apiClient.getMyProgressPhotos}
+        uploadProgressPhoto={apiClient.uploadProgressPhoto}
+        getMyProgressPhoto={apiClient.getMyProgressPhoto}
+        deleteMyProgressPhoto={apiClient.deleteMyProgressPhoto}
       />
     );
   }

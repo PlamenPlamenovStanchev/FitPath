@@ -15,11 +15,14 @@ import type {
   TrainersResponse,
   WorkoutCompletion,
   WorkoutCompletionsResponse,
+  ProgressPhoto,
+  ProgressPhotosResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
 import { BmiCard } from "./BmiCard";
 import { MyCoachPage } from "./MyCoachPage";
+import { ProgressPhotosPage } from "./ProgressPhotosPage";
 import { TrainerClientsPage } from "./TrainerClientsPage";
 import { TrainerApplicationPage } from "./TrainerApplicationPage";
 import { TrainingPlanEditorPage } from "./TrainingPlanEditorPage";
@@ -49,6 +52,10 @@ type AuthenticatedDashboardProps = {
   getMyWorkoutCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
   completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
   undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
+  getMyProgressPhotos: (signal?: AbortSignal) => Promise<ProgressPhotosResponse>;
+  uploadProgressPhoto: (photo: File) => Promise<ProgressPhoto>;
+  getMyProgressPhoto: (photoId: string) => Promise<Blob>;
+  deleteMyProgressPhoto: (photoId: string) => Promise<void>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -122,6 +129,10 @@ export function AuthenticatedDashboard({
   getMyWorkoutCompletions,
   completeWorkoutDay,
   undoWorkoutDayCompletion,
+  getMyProgressPhotos,
+  uploadProgressPhoto,
+  getMyProgressPhoto,
+  deleteMyProgressPhoto,
 }: AuthenticatedDashboardProps) {
   const roleNavigation = navigation.map((item) =>
     user.role === "TRAINER" && item.to === "/coach"
@@ -226,10 +237,19 @@ export function AuthenticatedDashboard({
           <Route
             path="progress"
             element={
-              <PlaceholderPage
-                title="Progress"
-                description="Progress tracking will be available in a future FitPath module."
-              />
+              user.role === "USER" ? (
+                <ProgressPhotosPage
+                  getPhotos={getMyProgressPhotos}
+                  uploadPhoto={uploadProgressPhoto}
+                  getPhoto={getMyProgressPhoto}
+                  deletePhoto={deleteMyProgressPhoto}
+                />
+              ) : (
+                <PlaceholderPage
+                  title="Progress"
+                  description="Progress photos are available to FitPath users."
+                />
+              )
             }
           />
           <Route

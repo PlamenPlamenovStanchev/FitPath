@@ -1022,3 +1022,56 @@ controls are implemented without gamification or schema changes.
 
 Completion ownership is derived from the workout day and its training plan on
 the server; no client-supplied user or trainer relationship is trusted.
+
+---
+
+## Day 3 - Private Progress Photos
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 3
+
+### Module:
+
+Progress Tracking
+
+### Task:
+
+Private R2-backed progress-photo upload, retrieval, and deletion.
+
+### AI Tool:
+
+Codex
+
+### Generated Result:
+
+- Added private `progress-photos/` object-key generation for JPEG, PNG, and
+  WebP uploads, limited to 5 MB.
+- Added backend MIME and magic-byte signature validation before R2 upload.
+- Added authenticated owner upload/list/view/delete routes and assigned-trainer
+  client list/view routes.
+- Kept object keys private: APIs return photo metadata and authenticated image
+  bytes, never public R2 URLs or storage credentials.
+- Added a USER progress-photo upload form, private Blob-backed gallery, and
+  deletion controls.
+- Added delete compensation: if R2 deletion fails after a record removal, the
+  database record is restored.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — private progress-photo storage and the USER gallery are complete
+without public R2 URLs or social-sharing features.
