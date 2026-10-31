@@ -6,11 +6,21 @@ import type {
   FitPathProfile,
   FitPathUser,
   FitnessGoal,
+  TrainerApplicationResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { BmiCard } from "./BmiCard";
+import { TrainerApplicationPage } from "./TrainerApplicationPage";
 
-type AuthenticatedDashboardProps = { user: FitPathUser };
+type AuthenticatedDashboardProps = {
+  user: FitPathUser;
+  getMyTrainerApplication: (signal?: AbortSignal) => Promise<TrainerApplicationResponse>;
+  createTrainerApplication: (payload: {
+    specialization: string;
+    biography: string;
+    certificate: File;
+  }) => Promise<TrainerApplicationResponse>;
+};
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
   SEDENTARY: "Sedentary",
@@ -62,7 +72,16 @@ function labelFitnessGoal(value: FitnessGoal | null): string {
   return value === null ? "Not available" : fitnessGoalLabels[value];
 }
 
-export function AuthenticatedDashboard({ user }: AuthenticatedDashboardProps) {
+export function AuthenticatedDashboard({
+  user,
+  getMyTrainerApplication,
+  createTrainerApplication,
+}: AuthenticatedDashboardProps) {
+  const visibleNavigation =
+    user.role === "USER"
+      ? [...navigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
+      : navigation;
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
@@ -80,7 +99,7 @@ export function AuthenticatedDashboard({ user }: AuthenticatedDashboardProps) {
           </div>
           <nav className="mt-5 overflow-x-auto" aria-label="Primary navigation">
             <ul className="flex min-w-max gap-1">
-              {navigation.map((item) => (
+              {visibleNavigation.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     className={({ isActive }) =>
@@ -134,6 +153,19 @@ export function AuthenticatedDashboard({ user }: AuthenticatedDashboardProps) {
               />
             }
           />
+          <Route
+            path="become-a-trainer"
+            element={
+              user.role === "USER" ? (
+                <TrainerApplicationPage
+                  getMyTrainerApplication={getMyTrainerApplication}
+                  createTrainerApplication={createTrainerApplication}
+                />
+              ) : (
+                <Navigate replace to="/" />
+              )
+            }
+          />
           <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </div>
@@ -141,7 +173,7 @@ export function AuthenticatedDashboard({ user }: AuthenticatedDashboardProps) {
   );
 }
 
-function DashboardPage({ user }: AuthenticatedDashboardProps) {
+function DashboardPage({ user }: { user: FitPathUser }) {
   const profile = user.profile;
 
   return (

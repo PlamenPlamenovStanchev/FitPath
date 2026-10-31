@@ -38,6 +38,18 @@ export type OnboardingResponse = {
   };
 };
 
+export type TrainerApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type TrainerApplication = {
+  id: string;
+  status: TrainerApplicationStatus;
+  submittedAt: string;
+};
+
+export type TrainerApplicationResponse = {
+  application: TrainerApplication | null;
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -71,10 +83,19 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
     });
 
     if (!response.ok) {
+      const errorBody: unknown = await response.json().catch(() => null);
+      const message =
+        errorBody &&
+        typeof errorBody === "object" &&
+        "error" in errorBody &&
+        typeof errorBody.error === "string"
+          ? errorBody.error
+          : response.status === 401
+            ? "Your session has expired. Please sign in again."
+            : "We could not complete this request. Please try again.";
+
       throw new ApiRequestError(
-        response.status === 401
-          ? "Your session has expired. Please sign in again."
-          : "We could not complete this request. Please try again.",
+        message,
         response.status,
       );
     }
@@ -91,5 +112,24 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }),
+    getMyTrainerApplication: (signal?: AbortSignal) =>
+      request<TrainerApplicationResponse>("/api/trainer-applications/me", {
+        signal,
+      }),
+    createTrainerApplication: (payload: {
+      specialization: string;
+      biography: string;
+      certificate: File;
+    }) => {
+      const formData = new FormData();
+      formData.append("specialization", payload.specialization);
+      formData.append("biography", payload.biography);
+      formData.append("certificate", payload.certificate);
+
+      return request<TrainerApplicationResponse>("/api/trainer-applications", {
+        method: "POST",
+        body: formData,
+      });
+    },
   };
 }

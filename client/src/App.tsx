@@ -124,7 +124,13 @@ function ProtectedHome() {
   }
 
   if (!error) {
-    return <AuthenticatedDashboard user={user!} />;
+    return (
+      <AuthenticatedDashboard
+        user={user!}
+        getMyTrainerApplication={apiClient.getMyTrainerApplication}
+        createTrainerApplication={apiClient.createTrainerApplication}
+      />
+    );
   }
 
   return (

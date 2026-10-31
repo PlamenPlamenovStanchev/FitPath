@@ -480,3 +480,66 @@ without adding HTTP upload routes, public URLs, or database migrations.
 
 R2 object keys are generated only on the server and stored as private bucket
 keys, allowing future backend authorization before downloads.
+
+---
+
+## Day 2 - Trainer Application Flow
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Trainer Applications
+
+### Task:
+
+Authenticated trainer application submission and status display.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Allow authenticated FitPath users to submit a specialization, biography, and
+private PDF certificate for trainer review without implementing approval.
+
+### Generated Result:
+
+- Added authenticated USER-only endpoints to create a trainer application and
+  retrieve the caller's most recent application status.
+- Added backend multipart validation for one PDF certificate no larger than
+  5 MB, including a PDF file signature check.
+- Uploaded validated certificates with server-generated private R2 keys and
+  persisted only the key in `trainer_applications`.
+- Added cleanup when database insertion fails after an R2 upload and relied on
+  the existing partial unique database index to prevent concurrent pending
+  submissions.
+- Added an authenticated Become a Trainer page with client-side guidance,
+  status display, and disabled resubmission while pending.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — trainer application submission and status display are implemented
+without exposing certificates, raw object keys, or approval functionality.
+
+### Lessons / Observations:
+
+The backend remains authoritative for the local FitPath user, role, file
+validation, R2 key generation, and pending-application constraint.

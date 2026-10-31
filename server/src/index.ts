@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { serverEnv } from "./config/env.js";
 import { meRouter } from "./routes/me.js";
+import { trainerApplicationsRouter } from "./routes/trainer-applications.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get("/health", (_request, response) => {
 });
 
 app.use("/api", meRouter);
+app.use("/api", trainerApplicationsRouter);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);
