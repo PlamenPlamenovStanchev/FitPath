@@ -129,6 +129,10 @@ function ProtectedHome() {
         user={user!}
         getMyTrainerApplication={apiClient.getMyTrainerApplication}
         createTrainerApplication={apiClient.createTrainerApplication}
+        getAdminTrainerApplications={apiClient.getAdminTrainerApplications}
+        approveTrainerApplication={apiClient.approveTrainerApplication}
+        rejectTrainerApplication={apiClient.rejectTrainerApplication}
+        downloadTrainerCertificate={apiClient.downloadTrainerCertificate}
       />
     );
   }

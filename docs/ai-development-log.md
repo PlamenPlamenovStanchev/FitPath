@@ -543,3 +543,65 @@ without exposing certificates, raw object keys, or approval functionality.
 
 The backend remains authoritative for the local FitPath user, role, file
 validation, R2 key generation, and pending-application constraint.
+
+---
+
+## Day 2 - Trainer Application Administration
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Trainer Applications
+
+### Task:
+
+ADMIN review of trainer applications.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Allow ADMIN users to review pending trainer applications, download private
+certificates through the backend, and approve or reject applications safely.
+
+### Generated Result:
+
+- Added ADMIN-only list, certificate download, approval, and rejection API
+  endpoints protected by Clerk authentication and the local FitPath role.
+- Implemented approval as one atomic PostgreSQL CTE statement that gates on a
+  pending application, creates one trainer profile, changes the user role to
+  TRAINER, and records the approval reviewer and timestamps.
+- Implemented rejection as a conditional pending-to-rejected update while
+  leaving the applicant role unchanged.
+- Added an ADMIN-only dashboard page to review pending applications, download
+  certificates through the authorized endpoint, and approve or reject them.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — ADMIN review functionality is implemented without public R2 access
+or client-supplied authorization data.
+
+### Lessons / Observations:
+
+The approval query only returns a row when every required state transition is
+valid, so repeated or concurrent approval attempts leave the application state
+unchanged after the first success.

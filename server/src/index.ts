@@ -2,6 +2,7 @@ import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
 import express from "express";
 import { serverEnv } from "./config/env.js";
+import { adminTrainerApplicationsRouter } from "./routes/admin-trainer-applications.js";
 import { meRouter } from "./routes/me.js";
 import { trainerApplicationsRouter } from "./routes/trainer-applications.js";
 
@@ -17,6 +18,7 @@ app.get("/health", (_request, response) => {
 
 app.use("/api", meRouter);
 app.use("/api", trainerApplicationsRouter);
+app.use("/api", adminTrainerApplicationsRouter);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);

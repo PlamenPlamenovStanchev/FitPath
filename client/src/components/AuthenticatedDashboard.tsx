@@ -2,6 +2,7 @@ import { UserButton } from "@clerk/react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 
 import type {
+  AdminTrainerApplicationsResponse,
   ActivityLevel,
   FitPathProfile,
   FitPathUser,
@@ -9,6 +10,7 @@ import type {
   TrainerApplicationResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
+import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
 import { BmiCard } from "./BmiCard";
 import { TrainerApplicationPage } from "./TrainerApplicationPage";
 
@@ -20,6 +22,10 @@ type AuthenticatedDashboardProps = {
     biography: string;
     certificate: File;
   }) => Promise<TrainerApplicationResponse>;
+  getAdminTrainerApplications: (signal?: AbortSignal) => Promise<AdminTrainerApplicationsResponse>;
+  approveTrainerApplication: (applicationId: string) => Promise<unknown>;
+  rejectTrainerApplication: (applicationId: string) => Promise<unknown>;
+  downloadTrainerCertificate: (applicationId: string) => Promise<Blob>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -76,11 +82,17 @@ export function AuthenticatedDashboard({
   user,
   getMyTrainerApplication,
   createTrainerApplication,
+  getAdminTrainerApplications,
+  approveTrainerApplication,
+  rejectTrainerApplication,
+  downloadTrainerCertificate,
 }: AuthenticatedDashboardProps) {
   const visibleNavigation =
     user.role === "USER"
       ? [...navigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
-      : navigation;
+      : user.role === "ADMIN"
+        ? [...navigation, { to: "/admin/trainer-applications", label: "Trainer applications", end: false }]
+        : navigation;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">
@@ -160,6 +172,21 @@ export function AuthenticatedDashboard({
                 <TrainerApplicationPage
                   getMyTrainerApplication={getMyTrainerApplication}
                   createTrainerApplication={createTrainerApplication}
+                />
+              ) : (
+                <Navigate replace to="/" />
+              )
+            }
+          />
+          <Route
+            path="admin/trainer-applications"
+            element={
+              user.role === "ADMIN" ? (
+                <AdminTrainerApplicationsPage
+                  getApplications={getAdminTrainerApplications}
+                  approveApplication={approveTrainerApplication}
+                  rejectApplication={rejectTrainerApplication}
+                  downloadCertificate={downloadTrainerCertificate}
                 />
               ) : (
                 <Navigate replace to="/" />

@@ -50,6 +50,18 @@ export type TrainerApplicationResponse = {
   application: TrainerApplication | null;
 };
 
+export type AdminTrainerApplication = {
+  id: string;
+  applicantId: string;
+  specialization: string;
+  biography: string;
+  submittedAt: string;
+};
+
+export type AdminTrainerApplicationsResponse = {
+  applications: AdminTrainerApplication[];
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -103,6 +115,33 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
     return (await response.json()) as T;
   }
 
+  async function requestBlob(path: string): Promise<Blob> {
+    const token = await getToken();
+
+    if (!token) {
+      throw new ApiRequestError("Your session is no longer available.", 401);
+    }
+
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorBody: unknown = await response.json().catch(() => null);
+      const message =
+        errorBody &&
+        typeof errorBody === "object" &&
+        "error" in errorBody &&
+        typeof errorBody.error === "string"
+          ? errorBody.error
+          : "We could not retrieve this certificate. Please try again.";
+
+      throw new ApiRequestError(message, response.status);
+    }
+
+    return response.blob();
+  }
+
   return {
     getMe: (signal?: AbortSignal) =>
       request<FitPathUser>("/api/me", { signal }),
@@ -131,5 +170,21 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         body: formData,
       });
     },
+    getAdminTrainerApplications: (signal?: AbortSignal) =>
+      request<AdminTrainerApplicationsResponse>("/api/admin/trainer-applications", {
+        signal,
+      }),
+    approveTrainerApplication: (applicationId: string) =>
+      request<{ status: "APPROVED" }>(
+        `/api/admin/trainer-applications/${applicationId}/approve`,
+        { method: "PATCH" },
+      ),
+    rejectTrainerApplication: (applicationId: string) =>
+      request<{ status: "REJECTED" }>(
+        `/api/admin/trainer-applications/${applicationId}/reject`,
+        { method: "PATCH" },
+      ),
+    downloadTrainerCertificate: (applicationId: string) =>
+      requestBlob(`/api/admin/trainer-applications/${applicationId}/certificate`),
   };
 }
