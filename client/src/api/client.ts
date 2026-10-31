@@ -62,6 +62,26 @@ export type AdminTrainerApplicationsResponse = {
   applications: AdminTrainerApplication[];
 };
 
+export type Trainer = {
+  userId: string;
+  specialization: string;
+  biography: string;
+  profilePhotoAvailable: boolean;
+  profilePhotoAccessPath: string | null;
+};
+
+export type TrainersResponse = {
+  trainers: Trainer[];
+};
+
+export type MyTrainerResponse = {
+  trainer: Trainer | null;
+};
+
+export type TrainerClientsResponse = {
+  clients: Array<{ userId: string; clientId: string }>;
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -186,5 +206,19 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       ),
     downloadTrainerCertificate: (applicationId: string) =>
       requestBlob(`/api/admin/trainer-applications/${applicationId}/certificate`),
+    getTrainers: (signal?: AbortSignal) =>
+      request<TrainersResponse>("/api/trainers", { signal }),
+    getMyTrainer: (signal?: AbortSignal) =>
+      request<MyTrainerResponse>("/api/me/trainer", { signal }),
+    assignTrainer: (trainerUserId: string) =>
+      request<{ trainerUserId: string }>("/api/me/trainer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainerUserId }),
+      }),
+    getTrainerProfilePhoto: (trainerUserId: string) =>
+      requestBlob(`/api/trainers/${trainerUserId}/profile-photo`),
+    getTrainerClients: (signal?: AbortSignal) =>
+      request<TrainerClientsResponse>("/api/trainer/clients", { signal }),
   };
 }

@@ -605,3 +605,64 @@ or client-supplied authorization data.
 The approval query only returns a row when every required state transition is
 valid, so repeated or concurrent approval attempts leave the application state
 unchanged after the first success.
+
+---
+
+## Day 2 - Trainer Discovery and Assignment
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Trainer Assignments
+
+### Task:
+
+Trainer discovery, client assignment, and active-client list.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Allow users to discover approved trainers, select or replace an active trainer,
+and allow trainers to view their currently assigned clients.
+
+### Generated Result:
+
+- Added authenticated trainer discovery that returns only users with a
+  trainer profile and TRAINER role.
+- Added authorized backend delivery for private trainer profile photos without
+  exposing R2 URLs or credentials.
+- Added USER-only assignment and current-trainer endpoints with an atomic
+  replacement statement that preserves inactive assignment history.
+- Added a TRAINER-only active client list endpoint.
+- Added My Coach discovery and selection UI for users and My Clients UI for
+  trainers.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — trainer selection and active-client discovery are implemented
+without chat, ratings, payments, or public object storage access.
+
+### Lessons / Observations:
+
+The database's partial unique active-assignment index remains the final
+integrity guard for one active trainer per client.

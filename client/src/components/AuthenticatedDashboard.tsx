@@ -8,10 +8,14 @@ import type {
   FitPathUser,
   FitnessGoal,
   TrainerApplicationResponse,
+  TrainerClientsResponse,
+  TrainersResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
 import { BmiCard } from "./BmiCard";
+import { MyCoachPage } from "./MyCoachPage";
+import { TrainerClientsPage } from "./TrainerClientsPage";
 import { TrainerApplicationPage } from "./TrainerApplicationPage";
 
 type AuthenticatedDashboardProps = {
@@ -26,6 +30,11 @@ type AuthenticatedDashboardProps = {
   approveTrainerApplication: (applicationId: string) => Promise<unknown>;
   rejectTrainerApplication: (applicationId: string) => Promise<unknown>;
   downloadTrainerCertificate: (applicationId: string) => Promise<Blob>;
+  getTrainers: (signal?: AbortSignal) => Promise<TrainersResponse>;
+  getMyTrainer: (signal?: AbortSignal) => Promise<{ trainer: TrainersResponse["trainers"][number] | null }>;
+  assignTrainer: (trainerUserId: string) => Promise<unknown>;
+  getTrainerProfilePhoto: (trainerUserId: string) => Promise<Blob>;
+  getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -86,13 +95,23 @@ export function AuthenticatedDashboard({
   approveTrainerApplication,
   rejectTrainerApplication,
   downloadTrainerCertificate,
+  getTrainers,
+  getMyTrainer,
+  assignTrainer,
+  getTrainerProfilePhoto,
+  getTrainerClients,
 }: AuthenticatedDashboardProps) {
+  const roleNavigation = navigation.map((item) =>
+    user.role === "TRAINER" && item.to === "/coach"
+      ? { ...item, label: "My Clients" }
+      : item,
+  );
   const visibleNavigation =
     user.role === "USER"
-      ? [...navigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
+      ? [...roleNavigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
       : user.role === "ADMIN"
-        ? [...navigation, { to: "/admin/trainer-applications", label: "Trainer applications", end: false }]
-        : navigation;
+        ? [...roleNavigation, { to: "/admin/trainer-applications", label: "Trainer applications", end: false }]
+        : roleNavigation;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">
@@ -150,10 +169,21 @@ export function AuthenticatedDashboard({
           <Route
             path="coach"
             element={
-              <PlaceholderPage
-                title="My Coach"
-                description="Coach connections are not part of the Day 1 dashboard."
-              />
+              user.role === "USER" ? (
+                <MyCoachPage
+                  getTrainers={getTrainers}
+                  getMyTrainer={getMyTrainer}
+                  assignTrainer={assignTrainer}
+                  getProfilePhoto={getTrainerProfilePhoto}
+                />
+              ) : user.role === "TRAINER" ? (
+                <TrainerClientsPage getClients={getTrainerClients} />
+              ) : (
+                <PlaceholderPage
+                  title="My Coach"
+                  description="Coach connections are only available to FitPath users."
+                />
+              )
             }
           />
           <Route

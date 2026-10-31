@@ -133,6 +133,11 @@ function ProtectedHome() {
         approveTrainerApplication={apiClient.approveTrainerApplication}
         rejectTrainerApplication={apiClient.rejectTrainerApplication}
         downloadTrainerCertificate={apiClient.downloadTrainerCertificate}
+        getTrainers={apiClient.getTrainers}
+        getMyTrainer={apiClient.getMyTrainer}
+        assignTrainer={apiClient.assignTrainer}
+        getTrainerProfilePhoto={apiClient.getTrainerProfilePhoto}
+        getTrainerClients={apiClient.getTrainerClients}
       />
     );
   }
