@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "storage:verify": "tsx src/scripts/verify-r2.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",

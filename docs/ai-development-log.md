@@ -416,3 +416,67 @@ training-plan, coach, or progress functionality.
 
 The profile data returned by the existing authenticated endpoint is sufficient
 for the Day 1 dashboard; no backend API changes were needed.
+
+---
+
+## Day 2 - Object Storage
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Object Storage
+
+### Task:
+
+Cloudflare R2 integration
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Add a private, server-side Cloudflare R2 storage service for future avatar and
+trainer-certificate uploads, with generated object keys and a cleanup-safe
+connectivity verification command.
+
+### Generated Result:
+
+- Added server-only R2 environment validation and an S3-compatible R2 client.
+- Added reusable upload, retrieve, and delete operations that work with private
+  object keys and Buffer content.
+- Added server-side generated keys and 5 MB MIME-type validation policies for
+  avatars and trainer certificates.
+- Added a development-only connectivity command that uploads, reads, verifies,
+  deletes, and confirms removal of a generated `_test` object.
+- Updated the environment template to document the private R2 endpoint without
+  a public bucket URL.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- R2 connectivity verification passed: upload, read, delete, and post-delete
+  absence check.
+
+### Outcome:
+
+**PASS** — private R2 storage utilities and connectivity verification completed
+without adding HTTP upload routes, public URLs, or database migrations.
+
+### Lessons / Observations:
+
+R2 object keys are generated only on the server and stored as private bucket
+keys, allowing future backend authorization before downloads.
