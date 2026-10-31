@@ -5,6 +5,7 @@ import { serverEnv } from "./config/env.js";
 import { adminTrainerApplicationsRouter } from "./routes/admin-trainer-applications.js";
 import { meRouter } from "./routes/me.js";
 import { trainersRouter } from "./routes/trainers.js";
+import { trainingPlansRouter } from "./routes/training-plans.js";
 import { trainerApplicationsRouter } from "./routes/trainer-applications.js";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api", meRouter);
 app.use("/api", trainerApplicationsRouter);
 app.use("/api", adminTrainerApplicationsRouter);
 app.use("/api", trainersRouter);
+app.use("/api", trainingPlansRouter);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);

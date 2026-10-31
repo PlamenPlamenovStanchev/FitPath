@@ -666,3 +666,66 @@ without chat, ratings, payments, or public object storage access.
 
 The database's partial unique active-assignment index remains the final
 integrity guard for one active trainer per client.
+
+---
+
+## Day 2 - Training Plans
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Training Plans
+
+### Task:
+
+Training Plan REST API
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Provide server-authorized CRUD operations for relational training plans,
+workout days, and ordered exercises without changing the database schema.
+
+### Generated Result:
+
+- Added authenticated REST endpoints for listing, reading, creating, replacing,
+  and deleting training plans.
+- Added server-side USER, TRAINER, and ADMIN access checks using the local
+  FitPath role and current active trainer assignments.
+- Added complete nested plan reads ordered by workout-day and exercise position.
+- Added input validation for plan dates, statuses, text, positions, exercise
+  values, and duplicate positions before database writes.
+- Added normalized in-memory exercise-library lookup to reuse matching exercise
+  rows and create missing rows within the nested write batch.
+- Used Neon HTTP batch transactions for atomic creation and replacement of plan
+  metadata, exercises, workout days, and workout exercises.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — relational training-plan persistence is exposed through an
+authorized REST API without PDF persistence or frontend plan-builder work.
+
+### Lessons / Observations:
+
+For Neon HTTP, a Drizzle batch provides transaction semantics for the known
+write statements while reusable exercises remain independent of plan deletion.
