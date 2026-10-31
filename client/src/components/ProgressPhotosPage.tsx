@@ -3,8 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import {
   ApiRequestError,
   type ProgressPhoto,
+  type ProgressEntriesResponse,
   type ProgressPhotosResponse,
+  type WorkoutCompletionsResponse,
 } from "../api/client";
+import { ProgressCharts } from "./ProgressCharts";
 
 const maximumPhotoSizeBytes = 5 * 1024 * 1024;
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -14,6 +17,8 @@ type ProgressPhotosPageProps = {
   uploadPhoto: (photo: File) => Promise<ProgressPhoto>;
   getPhoto: (photoId: string) => Promise<Blob>;
   deletePhoto: (photoId: string) => Promise<void>;
+  getProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
+  getCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
 };
 
 function validatePhoto(photo: File | null): string | null {
@@ -23,7 +28,7 @@ function validatePhoto(photo: File | null): string | null {
   return null;
 }
 
-export function ProgressPhotosPage({ getPhotos, uploadPhoto, getPhoto, deletePhoto }: ProgressPhotosPageProps) {
+export function ProgressPhotosPage({ getPhotos, uploadPhoto, getPhoto, deletePhoto, getProgress, getCompletions }: ProgressPhotosPageProps) {
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const objectUrlsRef = useRef(new Set<string>());
@@ -131,10 +136,13 @@ export function ProgressPhotosPage({ getPhotos, uploadPhoto, getPhoto, deletePho
   return (
     <section className="py-8 sm:py-10">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">Progress</p>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight">Progress photos</h2>
-      <p className="mt-3 max-w-2xl text-slate-300">Keep private visual records of your fitness journey. These photos are never publicly shared.</p>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight">Your progress</h2>
+      <p className="mt-3 max-w-2xl text-slate-300">Review your recorded progress and keep private visual records of your fitness journey.</p>
 
-      <form className="mt-8 rounded-xl border border-slate-800 bg-slate-900 p-5" onSubmit={(event) => void handleUpload(event)}>
+      <ProgressCharts getProgress={getProgress} getCompletions={getCompletions} />
+
+      <h3 className="mt-10 text-xl font-semibold">Progress photos</h3>
+      <form className="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-5" onSubmit={(event) => void handleUpload(event)}>
         <label className="block text-sm font-medium" htmlFor="progress-photo">Upload a photo (JPEG, PNG, or WebP; maximum 5 MB)</label>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <input id="progress-photo" name="photo" className="max-w-full text-sm text-slate-300" type="file" accept="image/jpeg,image/png,image/webp" disabled={isUploading} />

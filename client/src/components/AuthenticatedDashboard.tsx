@@ -17,6 +17,7 @@ import type {
   WorkoutCompletionsResponse,
   ProgressPhoto,
   ProgressPhotosResponse,
+  ProgressEntriesResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
@@ -56,6 +57,7 @@ type AuthenticatedDashboardProps = {
   uploadProgressPhoto: (photo: File) => Promise<ProgressPhoto>;
   getMyProgressPhoto: (photoId: string) => Promise<Blob>;
   deleteMyProgressPhoto: (photoId: string) => Promise<void>;
+  getMyProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -133,6 +135,7 @@ export function AuthenticatedDashboard({
   uploadProgressPhoto,
   getMyProgressPhoto,
   deleteMyProgressPhoto,
+  getMyProgress,
 }: AuthenticatedDashboardProps) {
   const roleNavigation = navigation.map((item) =>
     user.role === "TRAINER" && item.to === "/coach"
@@ -243,6 +246,8 @@ export function AuthenticatedDashboard({
                   uploadPhoto={uploadProgressPhoto}
                   getPhoto={getMyProgressPhoto}
                   deletePhoto={deleteMyProgressPhoto}
+                  getProgress={getMyProgress}
+                  getCompletions={getMyWorkoutCompletions}
                 />
               ) : (
                 <PlaceholderPage

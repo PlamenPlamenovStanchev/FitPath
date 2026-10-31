@@ -160,6 +160,17 @@ export type ProgressPhotosResponse = {
   photos: ProgressPhoto[];
 };
 
+export type ProgressEntry = {
+  id: string;
+  weightKg: number;
+  bmi: number;
+  recordedAt: string;
+};
+
+export type ProgressEntriesResponse = {
+  entries: ProgressEntry[];
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -333,6 +344,8 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       ),
     getMyProgressPhotos: (signal?: AbortSignal) =>
       request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
+    getMyProgress: (signal?: AbortSignal) =>
+      request<ProgressEntriesResponse>("/api/me/progress", { signal }),
     uploadProgressPhoto: (photo: File) => {
       const formData = new FormData();
       formData.append("photo", photo);

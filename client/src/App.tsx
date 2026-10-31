@@ -150,6 +150,7 @@ function ProtectedHome() {
         uploadProgressPhoto={apiClient.uploadProgressPhoto}
         getMyProgressPhoto={apiClient.getMyProgressPhoto}
         deleteMyProgressPhoto={apiClient.deleteMyProgressPhoto}
+        getMyProgress={apiClient.getMyProgress}
       />
     );
   }

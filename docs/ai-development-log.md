@@ -1075,3 +1075,54 @@ Not recorded.
 
 **PASS** — private progress-photo storage and the USER gallery are complete
 without public R2 URLs or social-sharing features.
+
+---
+
+## Day 3 - Progress Charts
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 3
+
+### Module:
+
+Progress Tracking
+
+### Task:
+
+Add exactly two responsive, accessible progress charts.
+
+### AI Tool:
+
+Codex
+
+### Generated Result:
+
+- Added an SVG weight-over-time line chart using authenticated historical
+  progress measurements.
+- Added an SVG weekly workout-completion chart. It shows each week’s share of
+  recorded completions and explicitly avoids representing this as an adherence
+  percentage because the current data model has no planned workout schedule.
+- Added loading, empty, and insufficient-data states for both charts.
+- Added accessible chart titles, descriptions, point/bar labels, and
+  screen-reader data tables.
+- Reused native SVG and existing APIs; no chart dependency was added.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — exactly two responsive progress charts are implemented with native
+SVG and no visualization dependency.
