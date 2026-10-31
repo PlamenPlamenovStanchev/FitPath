@@ -729,3 +729,123 @@ authorized REST API without PDF persistence or frontend plan-builder work.
 
 For Neon HTTP, a Drizzle batch provides transaction semantics for the known
 write statements while reusable exercises remain independent of plan deletion.
+
+---
+
+## Day 2 - Training Plan Editor
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Training Plans
+
+### Task:
+
+Training plan editor frontend.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Provide a simple responsive editor for authorized users and trainers using the
+existing training plan REST API.
+
+### Generated Result:
+
+- Added typed training-plan API client methods.
+- Replaced the My Plans placeholder with a plan list and editor for USER and
+  TRAINER roles.
+- Added fields for plan metadata, workout days, and exercises, including
+  add/remove controls and up/down ordering controls.
+- Added loading, save, success, and server/client validation states.
+- Added active-client selection for trainers when creating a new plan.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — a dependency-free training-plan editor is connected to the existing
+authorized API without adding advanced templates or AI generation.
+
+### Lessons / Observations:
+
+Simple up/down controls keep ordering explicit and avoid unnecessary
+drag-and-drop dependencies for the MVP.
+
+---
+
+## Day 2 - Training Plan PDF Export
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Training Plans
+
+### Task:
+
+Authorized on-demand PDF export.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Generate a clean A4 PDF from the current authorized PostgreSQL training plan
+without storing a PDF as application data.
+
+### Generated Result:
+
+- Added an authenticated `GET /api/training-plans/:id/pdf` endpoint.
+- Reused existing plan access checks before loading nested plan data or
+  generating the document.
+- Added on-demand PDFKit rendering with FitPath branding, available client and
+  trainer identity labels, plan metadata, ordered workouts, exercise details,
+  and a generated-date footer.
+- Returned PDF bytes directly with download response headers; no R2 storage or
+  database persistence was added.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- A representative PDF generation completed successfully. Poppler was not
+  available in the environment for local page rendering.
+
+### Outcome:
+
+**PASS** — PDF export is generated on demand from authorized current plan data.
+
+### Lessons / Observations:
+
+The exported document remains a derived download; PostgreSQL continues to be
+the editable source of truth.

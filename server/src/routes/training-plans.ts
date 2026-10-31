@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { Router } from "express";
+import PDFDocument from "pdfkit";
 
 import {
   getAuthenticatedClerkUserId,
@@ -499,6 +500,131 @@ async function getCompletePlan(plan: typeof trainingPlans.$inferSelect) {
   };
 }
 
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+export function createPlanPdf(
+  plan: Awaited<ReturnType<typeof getCompletePlan>>,
+  clientLabel: string,
+  trainerLabel: string | null,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const document = new PDFDocument({
+      size: "A4",
+      margin: 50,
+      info: { Title: `FitPath - ${plan.title}`, Author: "FitPath" },
+    });
+    const chunks: Buffer[] = [];
+
+    document.on("data", (chunk: Buffer) => chunks.push(chunk));
+    document.on("end", () => resolve(Buffer.concat(chunks)));
+    document.on("error", reject);
+
+    const ensureSpace = (height: number) => {
+      if (document.y + height > document.page.height - 70) {
+        document.addPage();
+      }
+    };
+    const writeLabelValue = (label: string, value: string) => {
+      document
+        .font("Helvetica-Bold")
+        .fillColor("#0f172a")
+        .text(`${label}: `, { continued: true })
+        .font("Helvetica")
+        .fillColor("#334155")
+        .text(value);
+    };
+
+    document
+      .fillColor("#059669")
+      .font("Helvetica-Bold")
+      .fontSize(11)
+      .text("FITPATH", { characterSpacing: 2 })
+      .moveDown(0.4)
+      .fillColor("#0f172a")
+      .fontSize(24)
+      .text("Training Plan")
+      .moveDown(1);
+
+    writeLabelValue("Client", clientLabel);
+    if (trainerLabel) {
+      writeLabelValue("Trainer", trainerLabel);
+    }
+
+    document.moveDown(0.8).strokeColor("#cbd5e1").moveTo(50, document.y).lineTo(545, document.y).stroke().moveDown(0.8);
+    document.font("Helvetica-Bold").fillColor("#0f172a").fontSize(16).text(plan.title);
+    document.moveDown(0.3).font("Helvetica").fillColor("#334155").fontSize(10).text(plan.goal);
+    document.moveDown(0.7);
+    writeLabelValue("Start date", formatDate(plan.startDate));
+    writeLabelValue("End date", formatDate(plan.endDate));
+    document.moveDown(1.2);
+
+    for (const [dayIndex, day] of plan.workoutDays.entries()) {
+      ensureSpace(80);
+      document
+        .fillColor("#065f46")
+        .font("Helvetica-Bold")
+        .fontSize(13)
+        .text(`Day ${dayIndex + 1} - ${day.name}`)
+        .moveDown(0.5);
+
+      if (day.exercises.length === 0) {
+        document.font("Helvetica-Oblique").fillColor("#64748b").fontSize(9).text("No exercises added.").moveDown(0.8);
+        continue;
+      }
+
+      for (const exercise of day.exercises) {
+        ensureSpace(65);
+        const details = [`${exercise.sets} sets`, `${exercise.repetitions} reps`];
+        if (exercise.weightKg !== null) {
+          details.push(`${exercise.weightKg} kg`);
+        }
+        if (exercise.restSeconds !== null) {
+          details.push(`${exercise.restSeconds}s rest`);
+        }
+
+        document
+          .font("Helvetica-Bold")
+          .fillColor("#0f172a")
+          .fontSize(10)
+          .text(exercise.name)
+          .font("Helvetica")
+          .fillColor("#475569")
+          .fontSize(9)
+          .text(details.join("  |  "));
+
+        if (exercise.notes) {
+          document.fillColor("#64748b").fontSize(8.5).text(`Notes: ${exercise.notes}`);
+        }
+        document.moveDown(0.55);
+      }
+
+      document.moveDown(0.4);
+    }
+
+    ensureSpace(30);
+    document
+      .strokeColor("#cbd5e1")
+      .moveTo(50, document.y)
+      .lineTo(545, document.y)
+      .stroke()
+      .moveDown(0.5)
+      .font("Helvetica")
+      .fillColor("#64748b")
+      .fontSize(8)
+      .text(`Generated ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date())} - FitPath`, {
+        align: "right",
+      });
+
+    document.end();
+  });
+}
+
 async function resolveCreateClientUserId(
   actor: LocalUser,
   inputClientUserId: string | null,
@@ -601,6 +727,62 @@ trainingPlansRouter.get("/training-plans/:id", requireAuthenticatedUser, async (
     response.status(500).json({ error: "Internal server error" });
   }
 });
+
+trainingPlansRouter.get(
+  "/training-plans/:id/pdf",
+  requireAuthenticatedUser,
+  async (request, response) => {
+    if (!isUuid(request.params.id)) {
+      response.status(404).json({ error: "Training plan was not found." });
+      return;
+    }
+
+    try {
+      const actor = await getLocalUser(getAuthenticatedClerkUserId(request));
+      const plan = await findPlanForAccess(request.params.id);
+
+      if (!plan) {
+        response.status(404).json({ error: "Training plan was not found." });
+        return;
+      }
+
+      if (!actor || !(await canAccessPlan(actor, plan, "read"))) {
+        response.status(403).json({ error: "Forbidden" });
+        return;
+      }
+
+      const [client] = await db
+        .select({ clerkUserId: users.clerkUserId })
+        .from(users)
+        .where(eq(users.id, plan.clientUserId))
+        .limit(1);
+      const [creator] = await db
+        .select({ clerkUserId: users.clerkUserId })
+        .from(users)
+        .where(eq(users.id, plan.createdByUserId))
+        .limit(1);
+      const completePlan = await getCompletePlan(plan);
+      const pdf = await createPlanPdf(
+        completePlan,
+        client?.clerkUserId ?? plan.clientUserId,
+        plan.createdByUserId === plan.clientUserId
+          ? null
+          : (creator?.clerkUserId ?? plan.createdByUserId),
+      );
+
+      response.setHeader("Content-Type", "application/pdf");
+      response.setHeader(
+        "Content-Disposition",
+        `attachment; filename="fitpath-training-plan-${plan.id}.pdf"`,
+      );
+      response.setHeader("Content-Length", pdf.length.toString());
+      response.status(200).send(pdf);
+    } catch {
+      console.error("Failed to generate training plan PDF");
+      response.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 trainingPlansRouter.post("/training-plans", requireAuthenticatedUser, async (request, response) => {
   const parsedInput = parseTrainingPlanInput(request.body);
