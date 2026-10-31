@@ -141,6 +141,16 @@ export type TrainingPlanPayload = {
 
 export type TrainingPlansResponse = { plans: TrainingPlanSummary[] };
 
+export type WorkoutCompletion = {
+  id: string;
+  workoutDayId: string;
+  completedAt: string;
+};
+
+export type WorkoutCompletionsResponse = {
+  completions: WorkoutCompletion[];
+};
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -297,5 +307,20 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       }),
     downloadTrainingPlanPdf: (planId: string) =>
       requestBlob(`/api/training-plans/${planId}/pdf`),
+    getMyWorkoutCompletions: (signal?: AbortSignal) =>
+      request<WorkoutCompletionsResponse>("/api/me/workout-completions", { signal }),
+    completeWorkoutDay: (workoutDayId: string) =>
+      request<{ completion: WorkoutCompletion }>(`/api/workout-days/${workoutDayId}/complete`, {
+        method: "POST",
+      }).then((response) => response.completion),
+    undoWorkoutDayCompletion: (workoutDayId: string) =>
+      request<{ workoutDayId: string }>(`/api/workout-days/${workoutDayId}/complete`, {
+        method: "DELETE",
+      }).then(() => undefined),
+    getTrainerClientWorkoutCompletions: (clientUserId: string, signal?: AbortSignal) =>
+      request<WorkoutCompletionsResponse>(
+        `/api/trainer/clients/${clientUserId}/workout-completions`,
+        { signal },
+      ),
   };
 }

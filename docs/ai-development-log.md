@@ -965,3 +965,60 @@ workout completion, progress photo upload, or schema changes.
 
 BMI is calculated only from the authenticated user's stored height and the
 submitted weight; client-provided BMI and ownership fields are ignored.
+
+---
+
+## Day 3 - Workout Completion Tracking
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 3
+
+### Module:
+
+Workout Completion Tracking
+
+### Task:
+
+Record and undo authenticated users' workout-day completions and display the
+completion state in the training-plan editor.
+
+### AI Tool:
+
+Codex
+
+### Generated Result:
+
+- Added authenticated completion create, undo, and current-user list endpoints.
+- Added trainer/admin client completion reads; TRAINER reads are authorized from
+  the active assignment in PostgreSQL.
+- Enforced USER-only completion writes and verified the workout day belongs to
+  the authenticated user's training plan before either write.
+- Reused the database unique `(user_id, workout_day_id)` constraint to reject
+  duplicate completions.
+- Added persisted-plan completion controls and a completed/total workout-day
+  summary for USERs in the React editor.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — workout completion writes, reads, ownership checks, and editor
+controls are implemented without gamification or schema changes.
+
+### Lessons / Observations:
+
+Completion ownership is derived from the workout day and its training plan on
+the server; no client-supplied user or trainer relationship is trusted.

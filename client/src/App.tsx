@@ -143,6 +143,9 @@ function ProtectedHome() {
         createTrainingPlan={apiClient.createTrainingPlan}
         updateTrainingPlan={apiClient.updateTrainingPlan}
         downloadTrainingPlanPdf={apiClient.downloadTrainingPlanPdf}
+        getMyWorkoutCompletions={apiClient.getMyWorkoutCompletions}
+        completeWorkoutDay={apiClient.completeWorkoutDay}
+        undoWorkoutDayCompletion={apiClient.undoWorkoutDayCompletion}
       />
     );
   }

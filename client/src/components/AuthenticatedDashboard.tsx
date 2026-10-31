@@ -13,6 +13,8 @@ import type {
   TrainingPlanPayload,
   TrainingPlansResponse,
   TrainersResponse,
+  WorkoutCompletion,
+  WorkoutCompletionsResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
@@ -44,6 +46,9 @@ type AuthenticatedDashboardProps = {
   createTrainingPlan: (payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   updateTrainingPlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   downloadTrainingPlanPdf: (planId: string) => Promise<Blob>;
+  getMyWorkoutCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
+  completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
+  undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -114,6 +119,9 @@ export function AuthenticatedDashboard({
   createTrainingPlan,
   updateTrainingPlan,
   downloadTrainingPlanPdf,
+  getMyWorkoutCompletions,
+  completeWorkoutDay,
+  undoWorkoutDayCompletion,
 }: AuthenticatedDashboardProps) {
   const roleNavigation = navigation.map((item) =>
     user.role === "TRAINER" && item.to === "/coach"
@@ -183,6 +191,9 @@ export function AuthenticatedDashboard({
                   updatePlan={updateTrainingPlan}
                   getTrainerClients={getTrainerClients}
                   downloadPlanPdf={downloadTrainingPlanPdf}
+                  getWorkoutCompletions={getMyWorkoutCompletions}
+                  completeWorkoutDay={completeWorkoutDay}
+                  undoWorkoutDayCompletion={undoWorkoutDayCompletion}
                 />
               ) : (
                 <PlaceholderPage

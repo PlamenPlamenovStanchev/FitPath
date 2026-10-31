@@ -8,6 +8,8 @@ import {
   type TrainingPlanPayload,
   type TrainingPlanStatus,
   type TrainingPlansResponse,
+  type WorkoutCompletion,
+  type WorkoutCompletionsResponse,
 } from "../api/client";
 
 type DraftExercise = {
@@ -44,6 +46,9 @@ type TrainingPlanEditorPageProps = {
   updatePlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
   downloadPlanPdf: (planId: string) => Promise<Blob>;
+  getWorkoutCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
+  completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
+  undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
 };
 
 function newExercise(): DraftExercise {
@@ -194,6 +199,9 @@ export function TrainingPlanEditorPage({
   updatePlan,
   getTrainerClients,
   downloadPlanPdf,
+  getWorkoutCompletions,
+  completeWorkoutDay,
+  undoWorkoutDayCompletion,
 }: TrainingPlanEditorPageProps) {
   const [plans, setPlans] = useState<TrainingPlansResponse["plans"]>([]);
   const [clients, setClients] = useState<TrainerClientsResponse["clients"]>([]);
@@ -203,6 +211,8 @@ export function TrainingPlanEditorPage({
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [completionByWorkoutDayId, setCompletionByWorkoutDayId] = useState<Record<string, WorkoutCompletion>>({});
+  const [completionActionWorkoutDayId, setCompletionActionWorkoutDayId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -211,12 +221,20 @@ export function TrainingPlanEditorPage({
     const clientRequest = user.role === "TRAINER"
       ? getTrainerClients(controller.signal)
       : Promise.resolve({ clients: [] });
+    const completionRequest = user.role === "USER"
+      ? getWorkoutCompletions(controller.signal)
+      : Promise.resolve({ completions: [] });
 
-    void Promise.all([getPlans(controller.signal), clientRequest])
-      .then(([plansResponse, clientsResponse]) => {
+    void Promise.all([getPlans(controller.signal), clientRequest, completionRequest])
+      .then(([plansResponse, clientsResponse, completionsResponse]) => {
         if (!controller.signal.aborted) {
           setPlans(plansResponse.plans);
           setClients(clientsResponse.clients);
+          setCompletionByWorkoutDayId(
+            Object.fromEntries(
+              completionsResponse.completions.map((completion) => [completion.workoutDayId, completion]),
+            ),
+          );
         }
       })
       .catch((requestError: unknown) => {
@@ -235,7 +253,7 @@ export function TrainingPlanEditorPage({
       });
 
     return () => controller.abort();
-  }, [getPlans, getTrainerClients, user.role]);
+  }, [getPlans, getTrainerClients, getWorkoutCompletions, user.role]);
 
   function startNewPlan() {
     setEditingPlanId(null);
@@ -359,6 +377,47 @@ export function TrainingPlanEditorPage({
     }
   }
 
+  async function toggleWorkoutDayCompletion(workoutDayId: string) {
+    if (completionActionWorkoutDayId) {
+      return;
+    }
+
+    setError(null);
+    setSaveMessage(null);
+    setCompletionActionWorkoutDayId(workoutDayId);
+
+    try {
+      const existingCompletion = completionByWorkoutDayId[workoutDayId];
+
+      if (existingCompletion) {
+        await undoWorkoutDayCompletion(workoutDayId);
+        setCompletionByWorkoutDayId((current) => {
+          const next = { ...current };
+          delete next[workoutDayId];
+          return next;
+        });
+      } else {
+        const completion = await completeWorkoutDay(workoutDayId);
+        setCompletionByWorkoutDayId((current) => ({
+          ...current,
+          [workoutDayId]: completion,
+        }));
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof ApiRequestError
+          ? requestError.message
+          : "We could not update this workout completion.",
+      );
+    } finally {
+      setCompletionActionWorkoutDayId(null);
+    }
+  }
+
+  const completedWorkoutDays = user.role === "USER"
+    ? draft.workoutDays.filter((day) => completionByWorkoutDayId[day.key]).length
+    : 0;
+
   return (
     <section className="py-8 sm:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -437,7 +496,14 @@ export function TrainingPlanEditorPage({
 
                 <div className="mt-8 border-t border-slate-800 pt-6">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-xl font-semibold">Workout days</h3>
+                    <div>
+                      <h3 className="text-xl font-semibold">Workout days</h3>
+                      {user.role === "USER" && editingPlanId && (
+                        <p className="mt-1 text-sm text-slate-400">
+                          {completedWorkoutDays} / {draft.workoutDays.length} completed
+                        </p>
+                      )}
+                    </div>
                     <button className="rounded-md border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-400/10" type="button" onClick={() => setDraft((current) => ({ ...current, workoutDays: [...current.workoutDays, newWorkoutDay()] }))}>
                       Add workout day
                     </button>
@@ -451,6 +517,20 @@ export function TrainingPlanEditorPage({
                             <TextField label={`Day ${dayIndex + 1} name`} value={day.name} onChange={(value) => updateDay(dayIndex, (current) => ({ ...current, name: value }))} />
                           </div>
                           <div className="flex gap-2">
+                            {user.role === "USER" && editingPlanId && (
+                              <button
+                                className="rounded-md border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                type="button"
+                                disabled={completionActionWorkoutDayId !== null}
+                                onClick={() => void toggleWorkoutDayCompletion(day.key)}
+                              >
+                                {completionActionWorkoutDayId === day.key
+                                  ? "Updating…"
+                                  : completionByWorkoutDayId[day.key]
+                                    ? "Undo completion"
+                                    : "Mark complete"}
+                              </button>
+                            )}
                             <OrderButton label="Move day up" disabled={dayIndex === 0} onClick={() => setDraft((current) => ({ ...current, workoutDays: moveItem(current.workoutDays, dayIndex, -1) }))}>↑</OrderButton>
                             <OrderButton label="Move day down" disabled={dayIndex === draft.workoutDays.length - 1} onClick={() => setDraft((current) => ({ ...current, workoutDays: moveItem(current.workoutDays, dayIndex, 1) }))}>↓</OrderButton>
                             <OrderButton label="Remove workout day" disabled={false} onClick={() => setDraft((current) => ({ ...current, workoutDays: current.workoutDays.filter((_, index) => index !== dayIndex) }))}>Remove</OrderButton>

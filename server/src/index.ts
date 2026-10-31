@@ -8,6 +8,7 @@ import { progressRouter } from "./routes/progress.js";
 import { trainersRouter } from "./routes/trainers.js";
 import { trainingPlansRouter } from "./routes/training-plans.js";
 import { trainerApplicationsRouter } from "./routes/trainer-applications.js";
+import { workoutCompletionsRouter } from "./routes/workout-completions.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api", adminTrainerApplicationsRouter);
 app.use("/api", trainersRouter);
 app.use("/api", trainingPlansRouter);
 app.use("/api", progressRouter);
+app.use("/api", workoutCompletionsRouter);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);
