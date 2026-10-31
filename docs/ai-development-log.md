@@ -906,3 +906,62 @@ client-side generation, new dependencies, or R2 storage.
 
 The Blob download path keeps authorization in the existing Bearer-token API
 request flow rather than relying on a public PDF URL.
+
+---
+
+## Day 3 - Progress Measurements
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 3
+
+### Module:
+
+Progress Tracking
+
+### Task:
+
+Progress measurement REST APIs.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Persist user weight measurements with server-calculated BMI and allow actively
+assigned trainers to read their clients' measurement history.
+
+### Generated Result:
+
+- Added authenticated GET and POST endpoints for a user's historical progress
+  measurements.
+- Added server-side profile-height lookup, onboarding-range weight validation,
+  and one-decimal informational BMI calculation.
+- Added TRAINER and ADMIN client-progress reads, with trainers verified against
+  the active assignment in PostgreSQL for every request.
+- Returned numeric database values as API numbers ordered newest first.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — historical progress measurement APIs are implemented without charts,
+workout completion, progress photo upload, or schema changes.
+
+### Lessons / Observations:
+
+BMI is calculated only from the authenticated user's stored height and the
+submitted weight; client-provided BMI and ownership fields are ignored.
