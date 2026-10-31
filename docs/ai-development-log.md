@@ -849,3 +849,60 @@ Not recorded.
 
 The exported document remains a derived download; PostgreSQL continues to be
 the editable source of truth.
+
+---
+
+## Day 2 - Training Plan PDF Download UX
+
+### Date:
+
+2026-10-31
+
+### Development Day:
+
+Day 2
+
+### Module:
+
+Training Plans
+
+### Task:
+
+Authenticated PDF download UX.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Expose the existing authorized training-plan PDF endpoint through the React
+plan editor without changing PDF generation or persistence.
+
+### Generated Result:
+
+- Added a typed authenticated `downloadTrainingPlanPdf` API client method that
+  returns a Blob from the existing endpoint.
+- Added a Download PDF control for persisted plans only.
+- Added disabled/loading and error handling states while a PDF is requested.
+- Triggered browser download using the plan-specific FitPath filename.
+
+### Manual Review / Corrections:
+
+Not recorded.
+
+### Validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+
+### Outcome:
+
+**PASS** — the frontend reuses backend authorization and PDF output without
+client-side generation, new dependencies, or R2 storage.
+
+### Lessons / Observations:
+
+The Blob download path keeps authorization in the existing Bearer-token API
+request flow rather than relying on a public PDF URL.

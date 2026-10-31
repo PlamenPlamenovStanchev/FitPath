@@ -43,6 +43,7 @@ type AuthenticatedDashboardProps = {
   getTrainingPlan: (planId: string, signal?: AbortSignal) => Promise<TrainingPlan>;
   createTrainingPlan: (payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   updateTrainingPlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
+  downloadTrainingPlanPdf: (planId: string) => Promise<Blob>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -112,6 +113,7 @@ export function AuthenticatedDashboard({
   getTrainingPlan,
   createTrainingPlan,
   updateTrainingPlan,
+  downloadTrainingPlanPdf,
 }: AuthenticatedDashboardProps) {
   const roleNavigation = navigation.map((item) =>
     user.role === "TRAINER" && item.to === "/coach"
@@ -180,6 +182,7 @@ export function AuthenticatedDashboard({
                   createPlan={createTrainingPlan}
                   updatePlan={updateTrainingPlan}
                   getTrainerClients={getTrainerClients}
+                  downloadPlanPdf={downloadTrainingPlanPdf}
                 />
               ) : (
                 <PlaceholderPage

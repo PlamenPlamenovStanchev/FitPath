@@ -295,5 +295,7 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }),
+    downloadTrainingPlanPdf: (planId: string) =>
+      requestBlob(`/api/training-plans/${planId}/pdf`),
   };
 }

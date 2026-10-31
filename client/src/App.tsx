@@ -142,6 +142,7 @@ function ProtectedHome() {
         getTrainingPlan={apiClient.getTrainingPlan}
         createTrainingPlan={apiClient.createTrainingPlan}
         updateTrainingPlan={apiClient.updateTrainingPlan}
+        downloadTrainingPlanPdf={apiClient.downloadTrainingPlanPdf}
       />
     );
   }

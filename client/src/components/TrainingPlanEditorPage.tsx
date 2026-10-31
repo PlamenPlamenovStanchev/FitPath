@@ -43,6 +43,7 @@ type TrainingPlanEditorPageProps = {
   createPlan: (payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   updatePlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
   getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
+  downloadPlanPdf: (planId: string) => Promise<Blob>;
 };
 
 function newExercise(): DraftExercise {
@@ -192,6 +193,7 @@ export function TrainingPlanEditorPage({
   createPlan,
   updatePlan,
   getTrainerClients,
+  downloadPlanPdf,
 }: TrainingPlanEditorPageProps) {
   const [plans, setPlans] = useState<TrainingPlansResponse["plans"]>([]);
   const [clients, setClients] = useState<TrainerClientsResponse["clients"]>([]);
@@ -200,6 +202,7 @@ export function TrainingPlanEditorPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -323,6 +326,36 @@ export function TrainingPlanEditorPage({
       );
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!editingPlanId || isDownloadingPdf) {
+      return;
+    }
+
+    setError(null);
+    setSaveMessage(null);
+    setIsDownloadingPdf(true);
+
+    try {
+      const pdf = await downloadPlanPdf(editingPlanId);
+      const objectUrl = URL.createObjectURL(pdf);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `fitpath-training-plan-${editingPlanId}.pdf`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    } catch (requestError) {
+      setError(
+        requestError instanceof ApiRequestError
+          ? requestError.message
+          : "We could not download this training plan PDF.",
+      );
+    } finally {
+      setIsDownloadingPdf(false);
     }
   }
 
@@ -454,9 +487,16 @@ export function TrainingPlanEditorPage({
                   </div>
                 </div>
 
-                <button className="mt-8 rounded-md bg-emerald-400 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isSaving}>
-                  {isSaving ? "Saving…" : editingPlanId ? "Save changes" : "Create plan"}
-                </button>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <button className="rounded-md bg-emerald-400 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isSaving || isDownloadingPdf}>
+                    {isSaving ? "Saving…" : editingPlanId ? "Save changes" : "Create plan"}
+                  </button>
+                  {editingPlanId && (
+                    <button className="rounded-md border border-slate-500 px-4 py-2 font-semibold text-slate-100 hover:border-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" type="button" disabled={isSaving || isDownloadingPdf} onClick={() => void downloadPdf()}>
+                      {isDownloadingPdf ? "Preparing PDF…" : "Download PDF"}
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </form>
