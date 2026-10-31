@@ -15,6 +15,13 @@
       "when": 1793440699654,
       "tag": "0001_fuzzy_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793443419701,
+      "tag": "0002_chief_paibok",
+      "breakpoints": true
     }
   ]
 }

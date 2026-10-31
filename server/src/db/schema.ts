@@ -2,7 +2,9 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
+  integer,
   numeric,
   pgEnum,
   pgTable,
@@ -33,6 +35,12 @@ export const trainerApplicationStatusEnum = pgEnum(
   "trainer_application_status",
   ["PENDING", "APPROVED", "REJECTED"],
 );
+
+export const trainingPlanStatusEnum = pgEnum("training_plan_status", [
+  "DRAFT",
+  "ACTIVE",
+  "COMPLETED",
+]);
 
 export const users = pgTable(
   "users",
@@ -199,6 +207,117 @@ export const trainerAssignments = pgTable(
         AND ${table.endedAt} IS NOT NULL
         AND ${table.endedAt} >= ${table.createdAt}
       )`,
+    ),
+  ],
+);
+
+export const trainingPlans = pgTable(
+  "training_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    // This is a plan-specific objective, separate from the profile fitness goal.
+    goal: text("goal").notNull(),
+    clientUserId: uuid("client_user_id")
+      .notNull()
+      .references(() => users.id),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    startDate: date("start_date", { mode: "string" }).notNull(),
+    endDate: date("end_date", { mode: "string" }).notNull(),
+    status: trainingPlanStatusEnum("status").notNull().default("DRAFT"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    // Application update operations must explicitly set this value; no trigger is used.
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("training_plans_client_status_idx").on(
+      table.clientUserId,
+      table.status,
+    ),
+    index("training_plans_created_by_user_idx").on(table.createdByUserId),
+    check("training_plans_title_not_blank", sql`length(btrim(${table.title})) > 0`),
+    check("training_plans_goal_not_blank", sql`length(btrim(${table.goal})) > 0`),
+    check("training_plans_date_range", sql`${table.endDate} >= ${table.startDate}`),
+  ],
+);
+
+export const workoutDays = pgTable(
+  "workout_days",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    trainingPlanId: uuid("training_plan_id")
+      .notNull()
+      .references(() => trainingPlans.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    position: smallint("position").notNull(),
+  },
+  (table) => [
+    uniqueIndex("workout_days_plan_position_unique").on(
+      table.trainingPlanId,
+      table.position,
+    ),
+    check("workout_days_name_not_blank", sql`length(btrim(${table.name})) > 0`),
+    check("workout_days_position_positive", sql`${table.position} > 0`),
+  ],
+);
+
+export const exercises = pgTable(
+  "exercises",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+  },
+  (table) => [
+    check("exercises_name_not_blank", sql`length(btrim(${table.name})) > 0`),
+  ],
+);
+
+export const workoutExercises = pgTable(
+  "workout_exercises",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workoutDayId: uuid("workout_day_id")
+      .notNull()
+      .references(() => workoutDays.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id")
+      .notNull()
+      .references(() => exercises.id),
+    sets: smallint("sets").notNull(),
+    repetitions: smallint("repetitions").notNull(),
+    weightKg: numeric("weight_kg", { precision: 6, scale: 2 }),
+    restSeconds: integer("rest_seconds"),
+    notes: text("notes"),
+    position: smallint("position").notNull(),
+  },
+  (table) => [
+    uniqueIndex("workout_exercises_day_position_unique").on(
+      table.workoutDayId,
+      table.position,
+    ),
+    index("workout_exercises_exercise_idx").on(table.exerciseId),
+    check("workout_exercises_sets_positive", sql`${table.sets} > 0`),
+    check(
+      "workout_exercises_repetitions_positive",
+      sql`${table.repetitions} > 0`,
+    ),
+    check(
+      "workout_exercises_weight_non_negative",
+      sql`${table.weightKg} IS NULL OR ${table.weightKg} >= 0`,
+    ),
+    check(
+      "workout_exercises_rest_non_negative",
+      sql`${table.restSeconds} IS NULL OR ${table.restSeconds} >= 0`,
+    ),
+    check(
+      "workout_exercises_position_positive",
+      sql`${table.position} > 0`,
     ),
   ],
 );
