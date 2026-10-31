@@ -138,6 +138,10 @@ function ProtectedHome() {
         assignTrainer={apiClient.assignTrainer}
         getTrainerProfilePhoto={apiClient.getTrainerProfilePhoto}
         getTrainerClients={apiClient.getTrainerClients}
+        getTrainingPlans={apiClient.getTrainingPlans}
+        getTrainingPlan={apiClient.getTrainingPlan}
+        createTrainingPlan={apiClient.createTrainingPlan}
+        updateTrainingPlan={apiClient.updateTrainingPlan}
       />
     );
   }

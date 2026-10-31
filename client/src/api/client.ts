@@ -82,6 +82,65 @@ export type TrainerClientsResponse = {
   clients: Array<{ userId: string; clientId: string }>;
 };
 
+export type TrainingPlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
+
+export type TrainingPlanExercise = {
+  workoutExerciseId: string;
+  exerciseId: string;
+  name: string;
+  description: string | null;
+  sets: number;
+  repetitions: number;
+  weightKg: string | null;
+  restSeconds: number | null;
+  notes: string | null;
+  position: number;
+};
+
+export type TrainingPlan = {
+  id: string;
+  title: string;
+  goal: string;
+  clientUserId: string;
+  createdByUserId: string;
+  startDate: string;
+  endDate: string;
+  status: TrainingPlanStatus;
+  workoutDays: Array<{
+    id: string;
+    name: string;
+    position: number;
+    exercises: TrainingPlanExercise[];
+  }>;
+};
+
+export type TrainingPlanSummary = Omit<TrainingPlan, "workoutDays">;
+
+export type TrainingPlanPayload = {
+  title: string;
+  goal: string;
+  startDate: string;
+  endDate: string;
+  status: TrainingPlanStatus;
+  clientUserId?: string;
+  workoutDays: Array<{
+    name: string;
+    position: number;
+    exercises: Array<{
+      name: string;
+      description?: string | null;
+      sets: number;
+      repetitions: number;
+      weightKg?: number | null;
+      restSeconds?: number | null;
+      notes?: string | null;
+      position: number;
+    }>;
+  }>;
+};
+
+export type TrainingPlansResponse = { plans: TrainingPlanSummary[] };
+
 type GetToken = () => Promise<string | null>;
 
 export class ApiRequestError extends Error {
@@ -220,5 +279,21 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       requestBlob(`/api/trainers/${trainerUserId}/profile-photo`),
     getTrainerClients: (signal?: AbortSignal) =>
       request<TrainerClientsResponse>("/api/trainer/clients", { signal }),
+    getTrainingPlans: (signal?: AbortSignal) =>
+      request<TrainingPlansResponse>("/api/training-plans", { signal }),
+    getTrainingPlan: (planId: string, signal?: AbortSignal) =>
+      request<TrainingPlan>(`/api/training-plans/${planId}`, { signal }),
+    createTrainingPlan: (payload: TrainingPlanPayload) =>
+      request<TrainingPlan>("/api/training-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    updateTrainingPlan: (planId: string, payload: TrainingPlanPayload) =>
+      request<TrainingPlan>(`/api/training-plans/${planId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
   };
 }

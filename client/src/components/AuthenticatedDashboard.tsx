@@ -9,6 +9,9 @@ import type {
   FitnessGoal,
   TrainerApplicationResponse,
   TrainerClientsResponse,
+  TrainingPlan,
+  TrainingPlanPayload,
+  TrainingPlansResponse,
   TrainersResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
@@ -17,6 +20,7 @@ import { BmiCard } from "./BmiCard";
 import { MyCoachPage } from "./MyCoachPage";
 import { TrainerClientsPage } from "./TrainerClientsPage";
 import { TrainerApplicationPage } from "./TrainerApplicationPage";
+import { TrainingPlanEditorPage } from "./TrainingPlanEditorPage";
 
 type AuthenticatedDashboardProps = {
   user: FitPathUser;
@@ -35,6 +39,10 @@ type AuthenticatedDashboardProps = {
   assignTrainer: (trainerUserId: string) => Promise<unknown>;
   getTrainerProfilePhoto: (trainerUserId: string) => Promise<Blob>;
   getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
+  getTrainingPlans: (signal?: AbortSignal) => Promise<TrainingPlansResponse>;
+  getTrainingPlan: (planId: string, signal?: AbortSignal) => Promise<TrainingPlan>;
+  createTrainingPlan: (payload: TrainingPlanPayload) => Promise<TrainingPlan>;
+  updateTrainingPlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -100,6 +108,10 @@ export function AuthenticatedDashboard({
   assignTrainer,
   getTrainerProfilePhoto,
   getTrainerClients,
+  getTrainingPlans,
+  getTrainingPlan,
+  createTrainingPlan,
+  updateTrainingPlan,
 }: AuthenticatedDashboardProps) {
   const roleNavigation = navigation.map((item) =>
     user.role === "TRAINER" && item.to === "/coach"
@@ -160,10 +172,21 @@ export function AuthenticatedDashboard({
           <Route
             path="plans"
             element={
-              <PlaceholderPage
-                title="My Plans"
-                description="Training plans will be available in a future FitPath module."
-              />
+              user.role === "USER" || user.role === "TRAINER" ? (
+                <TrainingPlanEditorPage
+                  user={user}
+                  getPlans={getTrainingPlans}
+                  getPlan={getTrainingPlan}
+                  createPlan={createTrainingPlan}
+                  updatePlan={updateTrainingPlan}
+                  getTrainerClients={getTrainerClients}
+                />
+              ) : (
+                <PlaceholderPage
+                  title="Training plans"
+                  description="Plan editing is available to FitPath users and trainers."
+                />
+              )
             }
           />
           <Route
