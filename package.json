@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
+    "admin:promote": "npm run admin:promote --workspace server --",
     "db:generate": "npm run db:generate --workspace server",
     "db:migrate": "npm run db:migrate --workspace server",
     "db:studio": "npm run db:studio --workspace server"
