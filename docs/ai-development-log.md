@@ -1129,7 +1129,7 @@ SVG and no visualization dependency.
 
 ---
 
-## Day 3 - Continuous Integration E2E Pipeline
+## Day 3 - Continuous Integration and Manual E2E
 
 ### Date:
 
@@ -1145,8 +1145,8 @@ Quality Assurance
 
 ### Task:
 
-Create a GitHub Actions CI workflow for linting, builds, unit tests, and
-Clerk-authenticated Cypress E2E tests.
+Create a reliable secrets-free CI workflow and a separate manual full E2E
+workflow.
 
 ### AI Tool:
 
@@ -1154,23 +1154,26 @@ Codex
 
 ### Generated Result:
 
-- Extended push and pull-request CI with unit tests and Cypress E2E coverage.
-- Configured test-scoped Clerk, database, and R2 values only through GitHub
-  secrets.
-- Kept migrations and destructive database resets outside CI.
-- Added failure-only Cypress screenshots, videos, and service-log artifacts.
+- Main push/pull-request CI now runs install, linting, type checking, unit
+  tests, and builds without application secrets or infrastructure.
+- Moved Clerk-authenticated Cypress execution to a manually dispatched Full
+  E2E workflow using test-scoped Clerk, Neon, and R2 secrets.
+- Kept migrations and destructive database resets outside both workflows.
+- Kept failure-only Cypress screenshots, videos, and service-log artifacts in
+  the Full E2E workflow.
 
 ### Manual Review / Corrections:
 
 Configure the documented `TEST_*` and `CYPRESS_*` secrets and reset the
-dedicated test environment before running E2E CI.
+dedicated test environment before manually running Full E2E.
 
 ### Validation:
 
-- Workflow runs install, linting, type checking, unit tests, build, service
-  health checks, and headless Cypress in that order.
+- Main CI runs install, linting, type checking, unit tests, and build only.
+- Full E2E starts services and runs headless Cypress only when dispatched.
 - No secret values or migration commands are committed.
 
 ### Outcome:
 
-**PASS** - CI uses an isolated, secret-configured test environment.
+**PASS** - main CI is deterministic and secrets-free; Full E2E remains
+available for the isolated test environment.

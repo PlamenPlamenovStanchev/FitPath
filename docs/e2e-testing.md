@@ -38,10 +38,20 @@ npm run e2e:run -- --spec cypress/e2e/critical-workflows.cy.ts
 
 The suite uses Clerk's supported `@clerk/testing` integration and `cy.clerkSignIn()` command; it does not automate or assert Clerk internals.
 
-## GitHub Actions CI
+## Main CI
 
-The CI workflow uses only GitHub Actions secrets and expects an already-reset,
-isolated test environment. Configure these secrets before enabling E2E CI:
+The main `CI` workflow runs on every push and pull request. It runs linting,
+type checking, unit tests, and a production build after `npm ci`. It does not
+start FitPath services and requires no Neon, Clerk, R2, database, or other
+application secrets.
+
+## Full E2E workflow
+
+The separate `Full E2E` workflow is manual-only (`workflow_dispatch`). It
+starts the client and API, then uses the dedicated Clerk, Neon, R2, and seeded
+test environment to verify complete authenticated user flows.
+
+Configure these GitHub Actions secrets before manually running Full E2E:
 
 ```text
 TEST_DATABASE_URL
@@ -65,7 +75,8 @@ CYPRESS_PENDING_TRAINER_APPLICATION_ID
 CYPRESS_UNRELATED_PLAN_ID
 ```
 
-CI deliberately does not run database migrations or destructive resets. Prepare
-the test database and pending trainer application through a separate,
-test-environment-only reset process before the workflow runs. Cypress videos,
-screenshots, and the service log are uploaded only if the job fails.
+Neither workflow runs database migrations or destructive resets. Prepare the
+test database and pending trainer application through a separate,
+test-environment-only reset process before the manual E2E workflow runs.
+Cypress videos, screenshots, and the service log are uploaded only if E2E
+fails.
