@@ -59,7 +59,8 @@ if [[ -z "$expected_checksum" || "$(sha256_file "$dump_file")" != "$expected_che
   exit 1
 fi
 
-PGDATABASE="$DATABASE_URL" pg_restore \
+pg_restore \
+  --dbname="$DATABASE_URL" \
   --clean \
   --if-exists \
   --no-owner \

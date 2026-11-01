@@ -31,7 +31,8 @@ mkdir -p "$package_directory/database" "$package_directory/storage"
 printf 'Backup ID: %s\n' "$backup_id"
 printf 'Backup start time (UTC): %s\n' "$timestamp"
 
-if ! PGDATABASE="$DATABASE_URL" pg_dump \
+if ! pg_dump \
+  --dbname="$DATABASE_URL" \
   --format=custom \
   --compress=9 \
   --file="$package_directory/database/fitpath.dump" \
