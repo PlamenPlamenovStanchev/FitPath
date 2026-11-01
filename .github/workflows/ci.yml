@@ -2,15 +2,35 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  quality:
+  test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      CLERK_PUBLISHABLE_KEY: ${{ secrets.TEST_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.TEST_CLERK_SECRET_KEY }}
+      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.TEST_CLERK_PUBLISHABLE_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.TEST_R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.TEST_R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.TEST_R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.TEST_R2_BUCKET_NAME }}
+      R2_ENDPOINT: ${{ secrets.TEST_R2_ENDPOINT }}
+      CYPRESS_userEmail: ${{ secrets.CYPRESS_USER_EMAIL }}
+      CYPRESS_userPassword: ${{ secrets.CYPRESS_USER_PASSWORD }}
+      CYPRESS_incompleteUserEmail: ${{ secrets.CYPRESS_INCOMPLETE_USER_EMAIL }}
+      CYPRESS_incompleteUserPassword: ${{ secrets.CYPRESS_INCOMPLETE_USER_PASSWORD }}
+      CYPRESS_trainerEmail: ${{ secrets.CYPRESS_TRAINER_EMAIL }}
+      CYPRESS_trainerPassword: ${{ secrets.CYPRESS_TRAINER_PASSWORD }}
+      CYPRESS_adminEmail: ${{ secrets.CYPRESS_ADMIN_EMAIL }}
+      CYPRESS_adminPassword: ${{ secrets.CYPRESS_ADMIN_PASSWORD }}
+      CYPRESS_assignedClientClerkUserId: ${{ secrets.CYPRESS_ASSIGNED_CLIENT_CLERK_USER_ID }}
+      CYPRESS_pendingTrainerApplicationId: ${{ secrets.CYPRESS_PENDING_TRAINER_APPLICATION_ID }}
+      CYPRESS_unrelatedPlanId: ${{ secrets.CYPRESS_UNRELATED_PLAN_ID }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -30,5 +50,31 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
+      - name: Run unit tests
+        run: npm run test:unit
+
       - name: Build
         run: npm run build
+
+      # This workflow intentionally never runs migrations or destructive resets.
+      - name: Start FitPath services
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        run: |
+          npm run dev > fitpath-services.log 2>&1 &
+          curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:3000/health
+          curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:5173
+
+      - name: Run Cypress E2E tests
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        run: npm run e2e:run -- --spec cypress/e2e/critical-workflows.cy.ts
+
+      - name: Upload Cypress failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-failure-artifacts
+          if-no-files-found: ignore
+          path: |
+            cypress/screenshots
+            cypress/videos
+            fitpath-services.log

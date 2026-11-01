@@ -1126,3 +1126,51 @@ Not recorded.
 
 **PASS** — exactly two responsive progress charts are implemented with native
 SVG and no visualization dependency.
+
+---
+
+## Day 3 - Continuous Integration E2E Pipeline
+
+### Date:
+
+2026-11-01
+
+### Development Day:
+
+Day 3
+
+### Module:
+
+Quality Assurance
+
+### Task:
+
+Create a GitHub Actions CI workflow for linting, builds, unit tests, and
+Clerk-authenticated Cypress E2E tests.
+
+### AI Tool:
+
+Codex
+
+### Generated Result:
+
+- Extended push and pull-request CI with unit tests and Cypress E2E coverage.
+- Configured test-scoped Clerk, database, and R2 values only through GitHub
+  secrets.
+- Kept migrations and destructive database resets outside CI.
+- Added failure-only Cypress screenshots, videos, and service-log artifacts.
+
+### Manual Review / Corrections:
+
+Configure the documented `TEST_*` and `CYPRESS_*` secrets and reset the
+dedicated test environment before running E2E CI.
+
+### Validation:
+
+- Workflow runs install, linting, type checking, unit tests, build, service
+  health checks, and headless Cypress in that order.
+- No secret values or migration commands are committed.
+
+### Outcome:
+
+**PASS** - CI uses an isolated, secret-configured test environment.
