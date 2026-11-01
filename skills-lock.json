@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cypress-author": {
+      "source": "cypress-io/ai-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/cypress-author/SKILL.md",
+      "computedHash": "20d08e46ec73f40bfdd99486e307f55f51cf273661c713c49ae63eb7bc1b9483"
+    }
+  }
+}
