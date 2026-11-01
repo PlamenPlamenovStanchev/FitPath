@@ -13,10 +13,18 @@ cypress/videos/
 .env.*
 !.env.example
 cypress.env.json
+cypress.env.local.json
 
 # Logs
 *.log
 npm-debug.log*
+
+# Local backup and database artifacts
+backups/
+*.dump
+*.sql.gz
+*.backup
+*.bak
 
 # Editors and operating systems
 .vscode/
