@@ -5,17 +5,30 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 
-import { serverEnv } from "../config/env.js";
+import { requireR2Environment } from "../config/env.js";
 import { assertPrivateObjectKey } from "./object-keys.js";
 
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: serverEnv.r2Endpoint,
-  credentials: {
-    accessKeyId: serverEnv.r2AccessKeyId,
-    secretAccessKey: serverEnv.r2SecretAccessKey,
-  },
-});
+let r2Storage: { client: S3Client; bucketName: string } | null = null;
+
+function getR2Storage() {
+  const r2Environment = requireR2Environment();
+
+  if (!r2Storage) {
+    r2Storage = {
+      client: new S3Client({
+        region: "auto",
+        endpoint: r2Environment.endpoint,
+        credentials: {
+          accessKeyId: r2Environment.accessKeyId,
+          secretAccessKey: r2Environment.secretAccessKey,
+        },
+      }),
+      bucketName: r2Environment.bucketName,
+    };
+  }
+
+  return r2Storage;
+}
 
 type UploadObjectInput = {
   key: string;
@@ -34,9 +47,11 @@ export async function uploadObject({
     throw new Error("Content type is required");
   }
 
-  await r2Client.send(
+  const { client, bucketName } = getR2Storage();
+
+  await client.send(
     new PutObjectCommand({
-      Bucket: serverEnv.r2BucketName,
+      Bucket: bucketName,
       Key: key,
       Body: body,
       ContentType: contentType,
@@ -46,10 +61,11 @@ export async function uploadObject({
 
 export async function getObject(key: string): Promise<Buffer> {
   assertPrivateObjectKey(key);
+  const { client, bucketName } = getR2Storage();
 
-  const result = await r2Client.send(
+  const result = await client.send(
     new GetObjectCommand({
-      Bucket: serverEnv.r2BucketName,
+      Bucket: bucketName,
       Key: key,
     }),
   );
@@ -63,10 +79,11 @@ export async function getObject(key: string): Promise<Buffer> {
 
 export async function deleteObject(key: string): Promise<void> {
   assertPrivateObjectKey(key);
+  const { client, bucketName } = getR2Storage();
 
-  await r2Client.send(
+  await client.send(
     new DeleteObjectCommand({
-      Bucket: serverEnv.r2BucketName,
+      Bucket: bucketName,
       Key: key,
     }),
   );
