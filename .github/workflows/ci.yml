@@ -61,8 +61,16 @@ jobs:
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
         run: |
           npm run dev > fitpath-services.log 2>&1 &
-          curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:3000/health
-          curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:5173
+          if ! curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:3000/health; then
+            echo "FitPath API did not start. Startup log follows:"
+            sed -n '1,200p' fitpath-services.log
+            exit 1
+          fi
+          if ! curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:5173; then
+            echo "FitPath client did not start. Startup log follows:"
+            sed -n '1,200p' fitpath-services.log
+            exit 1
+          fi
 
       - name: Run Cypress E2E tests
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
