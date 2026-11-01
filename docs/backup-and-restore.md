@@ -27,6 +27,12 @@ BACKUP_R2_ACCESS_KEY_ID
 BACKUP_R2_SECRET_ACCESS_KEY
 ```
 
+For GitHub Actions, configure those values as repository or environment
+secrets with the same names. The separate `Scheduled Backup` workflow runs at
+03:00 Europe/Sofia every day, including across daylight-saving changes (at
+04:00 on the day that 03:00 does not exist), and can also be started with
+**Run workflow**. It deliberately does not share the CI workflow.
+
 The operational R2 credentials must be limited to list/read on the operational
 bucket. The backup credentials must be distinct and limited to list/read/write/
 delete on the dedicated backup bucket. Keep the backup bucket private and do

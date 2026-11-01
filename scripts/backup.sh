@@ -28,6 +28,9 @@ backup_id="$(date -u +%Y%m%dT%H%M%SZ)-$(od -An -N4 -tx4 /dev/urandom | tr -d ' \
 package_directory="$WORK_DIRECTORY/$backup_id"
 mkdir -p "$package_directory/database" "$package_directory/storage"
 
+printf 'Backup ID: %s\n' "$backup_id"
+printf 'Backup start time (UTC): %s\n' "$timestamp"
+
 pg_service_file="$WORK_DIRECTORY/pg_service.conf"
 cat > "$pg_service_file" <<EOF
 [fitpath_backup]
@@ -35,15 +38,21 @@ dbname=${DATABASE_URL}
 EOF
 chmod 600 "$pg_service_file"
 
-PGSERVICEFILE="$pg_service_file" pg_dump \
+if ! PGSERVICEFILE="$pg_service_file" pg_dump \
   --dbname=service=fitpath_backup \
   --format=custom \
   --compress=9 \
   --file="$package_directory/database/fitpath.dump" \
   --no-owner \
-  --no-privileges
+  --no-privileges; then
+  printf 'Backup failed: pg_dump failed for backup ID %s.\n' "$backup_id" >&2
+  exit 1
+fi
 
-operational_aws s3 sync "s3://${R2_BUCKET_NAME}/" "$package_directory/storage/" --only-show-errors
+if ! operational_aws s3 sync "s3://${R2_BUCKET_NAME}/" "$package_directory/storage/" --only-show-errors; then
+  printf 'Backup failed: storage backup failed for backup ID %s.\n' "$backup_id" >&2
+  exit 1
+fi
 
 storage_checksum_file="$package_directory/storage-checksums.sha256"
 if find "$package_directory/storage" -type f -print -quit | grep -q .; then
@@ -73,7 +82,10 @@ cat > "$package_directory/manifest.json" <<EOF
 }
 EOF
 
-backup_aws s3 sync "$package_directory/" "s3://${BACKUP_R2_BUCKET_NAME}/backups/${backup_id}/" --only-show-errors
+if ! backup_aws s3 sync "$package_directory/" "s3://${BACKUP_R2_BUCKET_NAME}/backups/${backup_id}/" --only-show-errors; then
+  printf 'Backup failed: archive upload failed for backup ID %s.\n' "$backup_id" >&2
+  exit 1
+fi
 
 write_reference() {
   local tier="$1"
@@ -93,5 +105,8 @@ if [[ "$(date -u +%d)" == "01" ]]; then
   write_reference monthly "$(date -u +%Y-%m)"
 fi
 
-bash "$SCRIPT_DIRECTORY/prune-backups.sh"
+if ! bash "$SCRIPT_DIRECTORY/prune-backups.sh"; then
+  printf 'Backup failed: retention pruning failed for backup ID %s.\n' "$backup_id" >&2
+  exit 1
+fi
 printf 'Backup completed successfully: %s\n' "$backup_id"

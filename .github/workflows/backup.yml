@@ -1,0 +1,53 @@
+name: Scheduled Backup
+
+on:
+  # GitHub Actions cron uses UTC. Sofia is UTC+2 or UTC+3; the job below
+  # selects the single 03:00 local occurrence.
+  schedule:
+    - cron: '0 0,1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check scheduled local time
+        id: schedule
+        run: |
+          local_hour="$(TZ=Europe/Sofia date +%H)"
+          local_offset="$(TZ=Europe/Sofia date +%z)"
+          utc_hour="$(date -u +%H)"
+          previous_local_hour="$(TZ=Europe/Sofia date -d '1 hour ago' +%H)"
+
+          if { [ "$local_hour" = "03" ] && { [ "$local_offset" = "+0300" ] && [ "$utc_hour" = "00" ]; }; } \
+            || { [ "$local_hour" = "03" ] && { [ "$local_offset" = "+0200" ] && [ "$utc_hour" = "01" ]; }; } \
+            || { [ "$local_hour" = "04" ] && [ "$previous_local_hour" = "02" ] && [ "$local_offset" = "+0300" ] && [ "$utc_hour" = "01" ]; }; then
+            echo "run_backup=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_backup=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out repository
+        if: steps.schedule.outputs.run_backup == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        if: steps.schedule.outputs.run_backup == 'true' || github.event_name == 'workflow_dispatch'
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+
+      - name: Run backup
+        if: steps.schedule.outputs.run_backup == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          BACKUP_R2_ENDPOINT: ${{ secrets.BACKUP_R2_ENDPOINT }}
+          BACKUP_R2_BUCKET_NAME: ${{ secrets.BACKUP_R2_BUCKET_NAME }}
+          BACKUP_R2_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+          BACKUP_R2_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
+        run: bash scripts/backup.sh

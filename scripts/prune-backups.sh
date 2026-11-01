@@ -20,7 +20,7 @@ configure_backup_credentials
 list_references() {
   local tier="$1"
   backup_aws s3 ls "s3://${BACKUP_R2_BUCKET_NAME}/retention/${tier}/" --recursive \
-    | awk '{print $4}' | grep -E '^retention/.+\.json$' || true
+    | awk '$4 ~ /^retention\/.+\.json$/ { print $4 }'
 }
 
 prune_reference_tier() {
@@ -64,4 +64,8 @@ while IFS= read -r manifest_key; do
 done < <(backup_aws s3 ls "s3://${BACKUP_R2_BUCKET_NAME}/backups/" --recursive \
   | awk '$4 ~ /^backups\/[^/]+\/manifest\.json$/ { print $4 }')
 
-printf 'Backup retention pruning completed.\n'
+daily_count="$(list_references daily | wc -l | tr -d ' ')"
+weekly_count="$(list_references weekly | wc -l | tr -d ' ')"
+monthly_count="$(list_references monthly | wc -l | tr -d ' ')"
+printf 'Retention result: daily=%s/7 weekly=%s/5 monthly=%s/12.\n' \
+  "$daily_count" "$weekly_count" "$monthly_count"
