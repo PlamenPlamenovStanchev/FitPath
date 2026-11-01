@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  ApiRequestError,
-  type TrainerClientsResponse,
-} from "../api/client";
+import { ApiRequestError, type TrainerClientsResponse } from "../api/client";
 
 export function TrainerClientsPage({
   getClients,
@@ -11,6 +8,7 @@ export function TrainerClientsPage({
   getClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
 }) {
   const [clients, setClients] = useState<TrainerClientsResponse["clients"]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +23,11 @@ export function TrainerClientsPage({
               ? requestError.message
               : "We could not load your clients.",
           );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
         }
       });
 
@@ -45,6 +48,10 @@ export function TrainerClientsPage({
         <p className="mt-6 text-sm text-rose-300" role="alert">
           {error}
         </p>
+      ) : isLoading ? (
+        <p className="mt-8 text-slate-300" aria-live="polite">
+          Loading your clients…
+        </p>
       ) : clients.length === 0 ? (
         <div className="mt-8 rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
           You do not have any active clients yet.
@@ -52,7 +59,10 @@ export function TrainerClientsPage({
       ) : (
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {clients.map((client) => (
-            <li className="rounded-xl border border-slate-800 bg-slate-900 p-5" key={client.userId}>
+            <li
+              className="rounded-xl border border-slate-800 bg-slate-900 p-5"
+              key={client.userId}
+            >
               <p className="text-sm text-slate-400">Client</p>
               <p className="mt-2 font-semibold">{client.clientId}</p>
             </li>

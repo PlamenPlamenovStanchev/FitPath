@@ -30,33 +30,55 @@ import { TrainingPlanEditorPage } from "./TrainingPlanEditorPage";
 
 type AuthenticatedDashboardProps = {
   user: FitPathUser;
-  getMyTrainerApplication: (signal?: AbortSignal) => Promise<TrainerApplicationResponse>;
+  getMyTrainerApplication: (
+    signal?: AbortSignal,
+  ) => Promise<TrainerApplicationResponse>;
   createTrainerApplication: (payload: {
     specialization: string;
     biography: string;
     certificate: File;
   }) => Promise<TrainerApplicationResponse>;
-  getAdminTrainerApplications: (signal?: AbortSignal) => Promise<AdminTrainerApplicationsResponse>;
-  getAdminOverview: (signal?: AbortSignal) => Promise<import("../api/client").AdminOverview>;
-  getAdminUsers: (signal?: AbortSignal) => Promise<import("../api/client").AdminUsersResponse>;
-  getAdminTrainingPlans: (signal?: AbortSignal) => Promise<import("../api/client").AdminTrainingPlansResponse>;
+  getAdminTrainerApplications: (
+    signal?: AbortSignal,
+  ) => Promise<AdminTrainerApplicationsResponse>;
+  getAdminOverview: (
+    signal?: AbortSignal,
+  ) => Promise<import("../api/client").AdminOverview>;
+  getAdminUsers: (
+    signal?: AbortSignal,
+  ) => Promise<import("../api/client").AdminUsersResponse>;
+  getAdminTrainingPlans: (
+    signal?: AbortSignal,
+  ) => Promise<import("../api/client").AdminTrainingPlansResponse>;
   approveTrainerApplication: (applicationId: string) => Promise<unknown>;
   rejectTrainerApplication: (applicationId: string) => Promise<unknown>;
   downloadTrainerCertificate: (applicationId: string) => Promise<Blob>;
   getTrainers: (signal?: AbortSignal) => Promise<TrainersResponse>;
-  getMyTrainer: (signal?: AbortSignal) => Promise<{ trainer: TrainersResponse["trainers"][number] | null }>;
+  getMyTrainer: (
+    signal?: AbortSignal,
+  ) => Promise<{ trainer: TrainersResponse["trainers"][number] | null }>;
   assignTrainer: (trainerUserId: string) => Promise<unknown>;
   getTrainerProfilePhoto: (trainerUserId: string) => Promise<Blob>;
   getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
   getTrainingPlans: (signal?: AbortSignal) => Promise<TrainingPlansResponse>;
-  getTrainingPlan: (planId: string, signal?: AbortSignal) => Promise<TrainingPlan>;
+  getTrainingPlan: (
+    planId: string,
+    signal?: AbortSignal,
+  ) => Promise<TrainingPlan>;
   createTrainingPlan: (payload: TrainingPlanPayload) => Promise<TrainingPlan>;
-  updateTrainingPlan: (planId: string, payload: TrainingPlanPayload) => Promise<TrainingPlan>;
+  updateTrainingPlan: (
+    planId: string,
+    payload: TrainingPlanPayload,
+  ) => Promise<TrainingPlan>;
   downloadTrainingPlanPdf: (planId: string) => Promise<Blob>;
-  getMyWorkoutCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
+  getMyWorkoutCompletions: (
+    signal?: AbortSignal,
+  ) => Promise<WorkoutCompletionsResponse>;
   completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
   undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
-  getMyProgressPhotos: (signal?: AbortSignal) => Promise<ProgressPhotosResponse>;
+  getMyProgressPhotos: (
+    signal?: AbortSignal,
+  ) => Promise<ProgressPhotosResponse>;
   uploadProgressPhoto: (photo: File) => Promise<ProgressPhoto>;
   getMyProgressPhoto: (photoId: string) => Promise<Blob>;
   deleteMyProgressPhoto: (photoId: string) => Promise<void>;
@@ -143,17 +165,23 @@ export function AuthenticatedDashboard({
   deleteMyProgressPhoto,
   getMyProgress,
 }: AuthenticatedDashboardProps) {
-  const roleNavigation = navigation.map((item) =>
-    user.role === "TRAINER" && item.to === "/coach"
-      ? { ...item, label: "My Clients" }
-      : item,
-  );
   const visibleNavigation =
     user.role === "USER"
-      ? [...roleNavigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
-      : user.role === "ADMIN"
-        ? [...roleNavigation, { to: "/admin", label: "Admin", end: false }]
-        : roleNavigation;
+      ? [
+          ...navigation,
+          { to: "/become-a-trainer", label: "Become a Trainer", end: false },
+        ]
+      : user.role === "TRAINER"
+        ? navigation
+            .filter((item) => item.to !== "/progress")
+            .map((item) =>
+              item.to === "/coach" ? { ...item, label: "My Clients" } : item,
+            )
+        : [
+            navigation[0]!,
+            navigation.find((item) => item.to === "/profile")!,
+            { to: "/admin", label: "Admin", end: false },
+          ];
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8">

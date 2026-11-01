@@ -22,7 +22,9 @@ export function MyCoachPage({
 }: MyCoachPageProps) {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
-  const [profilePhotos, setProfilePhotos] = useState<Record<string, string>>({});
+  const [profilePhotos, setProfilePhotos] = useState<Record<string, string>>(
+    {},
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState<string | null>(null);
@@ -31,7 +33,10 @@ export function MyCoachPage({
     const controller = new AbortController();
     const objectUrls: string[] = [];
 
-    void Promise.all([getTrainers(controller.signal), getMyTrainer(controller.signal)])
+    void Promise.all([
+      getTrainers(controller.signal),
+      getMyTrainer(controller.signal),
+    ])
       .then(async ([trainersResponse, assignmentResponse]) => {
         if (controller.signal.aborted) {
           return;
@@ -40,7 +45,7 @@ export function MyCoachPage({
         setTrainers(trainersResponse.trainers);
         setSelectedTrainer(assignmentResponse.trainer);
 
-        const photoEntries = await Promise.all(
+        const photoResults = await Promise.allSettled(
           trainersResponse.trainers
             .filter((trainer) => trainer.profilePhotoAvailable)
             .map(async (trainer) => {
@@ -52,7 +57,13 @@ export function MyCoachPage({
         );
 
         if (!controller.signal.aborted) {
-          setProfilePhotos(Object.fromEntries(photoEntries));
+          setProfilePhotos(
+            Object.fromEntries(
+              photoResults.flatMap((result) =>
+                result.status === "fulfilled" ? [result.value] : [],
+              ),
+            ),
+          );
         }
       })
       .catch((requestError: unknown) => {
@@ -99,15 +110,22 @@ export function MyCoachPage({
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
         My Coach
       </p>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight">Choose your trainer</h2>
+      <h2 className="mt-2 text-3xl font-bold tracking-tight">
+        Choose your trainer
+      </h2>
       <p className="mt-3 max-w-2xl text-slate-300">
-        Browse approved trainers and choose the coach who best matches your goals.
+        Browse approved trainers and choose the coach who best matches your
+        goals.
       </p>
 
       {selectedTrainer && (
         <div className="mt-6 rounded-xl border border-emerald-400/40 bg-emerald-400/10 p-5 text-emerald-100">
-          <p className="text-sm font-semibold uppercase tracking-[0.15em]">Current trainer</p>
-          <p className="mt-2 text-lg font-semibold">{selectedTrainer.specialization}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.15em]">
+            Current trainer
+          </p>
+          <p className="mt-2 text-lg font-semibold">
+            {selectedTrainer.specialization}
+          </p>
         </div>
       )}
 
@@ -131,7 +149,10 @@ export function MyCoachPage({
             const isSelected = selectedTrainer?.userId === trainer.userId;
 
             return (
-              <article className="rounded-xl border border-slate-800 bg-slate-900 p-6" key={trainer.userId}>
+              <article
+                className="rounded-xl border border-slate-800 bg-slate-900 p-6"
+                key={trainer.userId}
+              >
                 {profilePhotos[trainer.userId] ? (
                   <img
                     className="h-16 w-16 rounded-full object-cover"
@@ -139,12 +160,19 @@ export function MyCoachPage({
                     alt={`${trainer.specialization} profile`}
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-xl font-semibold text-slate-300" aria-hidden="true">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-xl font-semibold text-slate-300"
+                    aria-hidden="true"
+                  >
                     FP
                   </div>
                 )}
-                <h3 className="mt-5 text-xl font-semibold">{trainer.specialization}</h3>
-                <p className="mt-3 whitespace-pre-wrap text-slate-300">{trainer.biography}</p>
+                <h3 className="mt-5 text-xl font-semibold">
+                  {trainer.specialization}
+                </h3>
+                <p className="mt-3 whitespace-pre-wrap text-slate-300">
+                  {trainer.biography}
+                </p>
                 <button
                   className="mt-6 rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                   type="button"
