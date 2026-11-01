@@ -21,6 +21,13 @@ type AdminPanelPageProps = {
   downloadCertificate: React.ComponentProps<typeof AdminTrainerApplicationsPage>["downloadCertificate"];
 };
 
+const adminNavigationItems: Array<[to: string, label: string, end: boolean]> = [
+  ["/admin", "Overview", true],
+  ["/admin/applications", "Trainer Applications", false],
+  ["/admin/users", "Users", false],
+  ["/admin/plans", "Training Plans", false],
+];
+
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof ApiRequestError ? error.message : fallback;
 }
@@ -53,12 +60,7 @@ export function AdminPanelPage({
 
       <nav className="mt-6 overflow-x-auto" aria-label="Admin navigation">
         <ul className="flex min-w-max gap-2">
-          {[
-            ["/admin", "Overview", true],
-            ["/admin/applications", "Trainer Applications", false],
-            ["/admin/users", "Users", false],
-            ["/admin/plans", "Training Plans", false],
-          ].map(([to, label, end]) => (
+          {adminNavigationItems.map(([to, label, end]) => (
             <li key={to}>
               <NavLink
                 className={({ isActive }) =>

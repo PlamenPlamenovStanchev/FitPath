@@ -1177,3 +1177,86 @@ dedicated test environment before manually running Full E2E.
 
 **PASS** - main CI is deterministic and secrets-free; Full E2E remains
 available for the isolated test environment.
+
+---
+
+## Day 4 - Final Backend Security and Quality Review
+
+### Date:
+
+2026-11-01
+
+### Development Day:
+
+Day 4
+
+### Module:
+
+Backend Security, Error Handling, and Backup Retention
+
+### Task:
+
+Feature-freeze final security and backend correctness audit.
+
+### AI Tool:
+
+Codex
+
+### Goal:
+
+Audit protected API authorization, private-file delivery, validation,
+migrations, secrets, CI, and backup safety; fix only critical, high, and
+genuine medium findings without changing product functionality.
+
+### Prompt:
+
+```text
+Act as FitPath backend-expert. This is the final Day 4 security and backend
+quality review. FEATURE FREEZE IS ACTIVE. Do NOT add new functionality.
+```
+
+### Generated Result:
+
+- Reviewed the server routes, Clerk authentication helpers, local role checks,
+  training-plan and trainer-assignment authorization, progress authorization,
+  private R2 access, PDF delivery, migrations 0000--0003, workflows, and
+  backup scripts.
+- Added a final Express error handler so malformed JSON receives a controlled
+  400 JSON response and unexpected unhandled failures receive a generic 500
+  JSON response instead of the development error page.
+- Hardened backup retention to fail closed when R2 reference listings or reads
+  fail, when references contain invalid backup IDs, or when no retained
+  reference remains. Package deletion now proceeds only after valid retained
+  references have been collected.
+- Did not create or modify database migrations.
+
+### Manual Review / Corrections:
+
+- Kept low-risk semantics issues out of scope under feature freeze: unknown
+  trainer selection currently returns 409 rather than 404, and PDF labels use
+  opaque Clerk IDs because display names are not persisted.
+- Corrected three pre-existing compile-only client issues without changing
+  behavior: an unused import and an inferred navigation tuple whose boolean
+  member widened to `string | boolean`.
+
+### Validation:
+
+- `npm.cmd run lint` passed.
+- `npm.cmd run typecheck` passed for client and server workspaces.
+- `npm.cmd run test:unit` passed: 5 tests passed, 0 failed.
+- `npm.cmd run build` passed for client and server workspaces. The initial
+  local sandbox attempt was blocked while Vite inspected parent path metadata;
+  the permitted retry completed successfully.
+- `bash -n` could not run because the local WSL Bash service was unavailable.
+
+### Outcome:
+
+**PASS** — the identified critical backup-retention and medium error-response
+issues were fixed, with repository-wide linting, type checking, unit tests, and
+production builds passing.
+
+### Lessons / Observations:
+
+Failure-prone storage-list operations must not be embedded in process
+substitutions that can silently convert an infrastructure failure into an empty
+retention set before destructive deletion.

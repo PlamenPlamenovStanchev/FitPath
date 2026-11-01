@@ -1,6 +1,6 @@
 import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import { serverEnv } from "./config/env.js";
 import { adminRouter } from "./routes/admin.js";
 import { adminTrainerApplicationsRouter } from "./routes/admin-trainer-applications.js";
@@ -31,6 +31,30 @@ app.use("/api", trainingPlansRouter);
 app.use("/api", progressRouter);
 app.use("/api", progressPhotosRouter);
 app.use("/api", workoutCompletionsRouter);
+
+// Keep parser and unexpected route failures from falling through to Express's
+// development error page, which can include implementation details.
+app.use(
+  (
+    error: unknown,
+    _request: Request,
+    response: Response,
+    next: NextFunction,
+  ) => {
+    if (response.headersSent) {
+      next(error);
+      return;
+    }
+
+    if (error instanceof SyntaxError && "body" in error) {
+      response.status(400).json({ error: "Invalid JSON request body." });
+      return;
+    }
+
+    console.error("Unhandled API error");
+    response.status(500).json({ error: "Internal server error" });
+  },
+);
 
 app.listen(serverEnv.port, () => {
   console.log(`FitPath API listening on http://localhost:${serverEnv.port}`);

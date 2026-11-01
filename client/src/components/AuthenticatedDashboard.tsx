@@ -20,7 +20,6 @@ import type {
   ProgressEntriesResponse,
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
-import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
 import { AdminPanelPage } from "./AdminPanelPage";
 import { BmiCard } from "./BmiCard";
 import { MyCoachPage } from "./MyCoachPage";
