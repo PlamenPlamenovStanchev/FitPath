@@ -10,7 +10,7 @@ SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIRECTORY/backup-lib.sh"
 
 require_env BACKUP_R2_BUCKET_NAME
-require_env BACKUP_R2_ENDPOINT
+require_r2_endpoint BACKUP_R2_ENDPOINT
 require_command aws
 
 create_work_directory

@@ -11,6 +11,8 @@ source "$SCRIPT_DIRECTORY/backup-lib.sh"
 for variable in DATABASE_URL R2_ENDPOINT R2_BUCKET_NAME BACKUP_R2_ENDPOINT BACKUP_R2_BUCKET_NAME; do
   require_env "$variable"
 done
+require_r2_endpoint R2_ENDPOINT
+require_r2_endpoint BACKUP_R2_ENDPOINT
 for command in pg_dump aws find sort awk od tr wc xargs; do
   require_command "$command"
 done

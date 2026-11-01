@@ -22,6 +22,8 @@ fi
 for variable in BACKUP_R2_BUCKET_NAME BACKUP_R2_ENDPOINT DATABASE_URL RESTORE_R2_ENDPOINT RESTORE_R2_BUCKET_NAME RESTORE_R2_ACCESS_KEY_ID RESTORE_R2_SECRET_ACCESS_KEY; do
   require_env "$variable"
 done
+require_r2_endpoint BACKUP_R2_ENDPOINT
+require_r2_endpoint RESTORE_R2_ENDPOINT
 for command in pg_restore aws grep sed; do
   require_command "$command"
 done

@@ -33,6 +33,11 @@ secrets with the same names. The separate `Scheduled Backup` workflow runs at
 04:00 on the day that 03:00 does not exist), and can also be started with
 **Run workflow**. It deliberately does not share the CI workflow.
 
+For `R2_ENDPOINT` and `BACKUP_R2_ENDPOINT`, copy only the API URL value, for
+example `https://<account-id>.r2.cloudflarestorage.com`. Do not include the
+variable name, `=`, quotation marks, a bucket name, or an R2 public/custom
+domain.
+
 The operational R2 credentials must be limited to list/read on the operational
 bucket. The backup credentials must be distinct and limited to list/read/write/
 delete on the dedicated backup bucket. Keep the backup bucket private and do

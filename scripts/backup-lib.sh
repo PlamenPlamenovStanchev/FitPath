@@ -20,6 +20,17 @@ require_command() {
   fi
 }
 
+require_r2_endpoint() {
+  local name="$1"
+  local value="${!name:-}"
+
+  require_env "$name"
+  if [[ ! "$value" =~ ^https://[[:alnum:]]+\.r2\.cloudflarestorage\.com/?$ ]]; then
+    printf 'Invalid %s: expected the Cloudflare R2 S3 API endpoint URL (without quotes or KEY=).\n' "$name" >&2
+    exit 1
+  fi
+}
+
 sha256_file() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{print $1}'
