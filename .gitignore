@@ -12,6 +12,7 @@ cypress/videos/
 .env
 .env.*
 !.env.example
+cypress.env.json
 
 # Logs
 *.log
