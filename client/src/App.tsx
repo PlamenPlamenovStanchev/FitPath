@@ -130,6 +130,9 @@ function ProtectedHome() {
         getMyTrainerApplication={apiClient.getMyTrainerApplication}
         createTrainerApplication={apiClient.createTrainerApplication}
         getAdminTrainerApplications={apiClient.getAdminTrainerApplications}
+        getAdminOverview={apiClient.getAdminOverview}
+        getAdminUsers={apiClient.getAdminUsers}
+        getAdminTrainingPlans={apiClient.getAdminTrainingPlans}
         approveTrainerApplication={apiClient.approveTrainerApplication}
         rejectTrainerApplication={apiClient.rejectTrainerApplication}
         downloadTrainerCertificate={apiClient.downloadTrainerCertificate}

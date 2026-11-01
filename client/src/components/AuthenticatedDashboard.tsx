@@ -21,6 +21,7 @@ import type {
 } from "../api/client";
 import { calculateBmi } from "../utils/bmi";
 import { AdminTrainerApplicationsPage } from "./AdminTrainerApplicationsPage";
+import { AdminPanelPage } from "./AdminPanelPage";
 import { BmiCard } from "./BmiCard";
 import { MyCoachPage } from "./MyCoachPage";
 import { ProgressPhotosPage } from "./ProgressPhotosPage";
@@ -37,6 +38,9 @@ type AuthenticatedDashboardProps = {
     certificate: File;
   }) => Promise<TrainerApplicationResponse>;
   getAdminTrainerApplications: (signal?: AbortSignal) => Promise<AdminTrainerApplicationsResponse>;
+  getAdminOverview: (signal?: AbortSignal) => Promise<import("../api/client").AdminOverview>;
+  getAdminUsers: (signal?: AbortSignal) => Promise<import("../api/client").AdminUsersResponse>;
+  getAdminTrainingPlans: (signal?: AbortSignal) => Promise<import("../api/client").AdminTrainingPlansResponse>;
   approveTrainerApplication: (applicationId: string) => Promise<unknown>;
   rejectTrainerApplication: (applicationId: string) => Promise<unknown>;
   downloadTrainerCertificate: (applicationId: string) => Promise<Blob>;
@@ -115,6 +119,9 @@ export function AuthenticatedDashboard({
   getMyTrainerApplication,
   createTrainerApplication,
   getAdminTrainerApplications,
+  getAdminOverview,
+  getAdminUsers,
+  getAdminTrainingPlans,
   approveTrainerApplication,
   rejectTrainerApplication,
   downloadTrainerCertificate,
@@ -146,7 +153,7 @@ export function AuthenticatedDashboard({
     user.role === "USER"
       ? [...roleNavigation, { to: "/become-a-trainer", label: "Become a Trainer", end: false }]
       : user.role === "ADMIN"
-        ? [...roleNavigation, { to: "/admin/trainer-applications", label: "Trainer applications", end: false }]
+        ? [...roleNavigation, { to: "/admin", label: "Admin", end: false }]
         : roleNavigation;
 
   return (
@@ -271,10 +278,14 @@ export function AuthenticatedDashboard({
             }
           />
           <Route
-            path="admin/trainer-applications"
+            path="admin/*"
             element={
               user.role === "ADMIN" ? (
-                <AdminTrainerApplicationsPage
+                <AdminPanelPage
+                  getOverview={getAdminOverview}
+                  getUsers={getAdminUsers}
+                  getPlans={getAdminTrainingPlans}
+                  getPlan={getTrainingPlan}
                   getApplications={getAdminTrainerApplications}
                   approveApplication={approveTrainerApplication}
                   rejectApplication={rejectTrainerApplication}

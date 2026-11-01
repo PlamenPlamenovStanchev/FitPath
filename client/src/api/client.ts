@@ -62,6 +62,34 @@ export type AdminTrainerApplicationsResponse = {
   applications: AdminTrainerApplication[];
 };
 
+export type AdminOverview = {
+  totalUsers: number;
+  totalTrainers: number;
+  pendingTrainerApplications: number;
+  totalTrainingPlans: number;
+};
+
+export type AdminUser = {
+  id: string;
+  role: FitPathUser["role"];
+  onboardingCompleted: boolean;
+  createdAt: string;
+};
+
+export type AdminUsersResponse = { users: AdminUser[] };
+
+export type AdminTrainingPlan = {
+  id: string;
+  title: string;
+  clientUserId: string;
+  createdByUserId: string;
+  status: TrainingPlanStatus;
+  startDate: string;
+  endDate: string;
+};
+
+export type AdminTrainingPlansResponse = { plans: AdminTrainingPlan[] };
+
 export type Trainer = {
   userId: string;
   specialization: string;
@@ -283,6 +311,12 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       request<AdminTrainerApplicationsResponse>("/api/admin/trainer-applications", {
         signal,
       }),
+    getAdminOverview: (signal?: AbortSignal) =>
+      request<AdminOverview>("/api/admin/overview", { signal }),
+    getAdminUsers: (signal?: AbortSignal) =>
+      request<AdminUsersResponse>("/api/admin/users", { signal }),
+    getAdminTrainingPlans: (signal?: AbortSignal) =>
+      request<AdminTrainingPlansResponse>("/api/admin/training-plans", { signal }),
     approveTrainerApplication: (applicationId: string) =>
       request<{ status: "APPROVED" }>(
         `/api/admin/trainer-applications/${applicationId}/approve`,
