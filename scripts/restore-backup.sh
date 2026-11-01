@@ -59,15 +59,7 @@ if [[ -z "$expected_checksum" || "$(sha256_file "$dump_file")" != "$expected_che
   exit 1
 fi
 
-pg_service_file="$WORK_DIRECTORY/pg_service.conf"
-cat > "$pg_service_file" <<EOF
-[fitpath_restore]
-dbname=${DATABASE_URL}
-EOF
-chmod 600 "$pg_service_file"
-
-PGSERVICEFILE="$pg_service_file" pg_restore \
-  --dbname=service=fitpath_restore \
+PGDATABASE="$DATABASE_URL" pg_restore \
   --clean \
   --if-exists \
   --no-owner \

@@ -31,15 +31,7 @@ mkdir -p "$package_directory/database" "$package_directory/storage"
 printf 'Backup ID: %s\n' "$backup_id"
 printf 'Backup start time (UTC): %s\n' "$timestamp"
 
-pg_service_file="$WORK_DIRECTORY/pg_service.conf"
-cat > "$pg_service_file" <<EOF
-[fitpath_backup]
-dbname=${DATABASE_URL}
-EOF
-chmod 600 "$pg_service_file"
-
-if ! PGSERVICEFILE="$pg_service_file" pg_dump \
-  --dbname=service=fitpath_backup \
+if ! PGDATABASE="$DATABASE_URL" pg_dump \
   --format=custom \
   --compress=9 \
   --file="$package_directory/database/fitpath.dump" \
