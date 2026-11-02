@@ -60,11 +60,28 @@ export function TrainerClientsPage({
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {clients.map((client) => (
             <li
-              className="rounded-xl border border-slate-800 bg-slate-900 p-5"
+              className="rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-400/40"
               key={client.userId}
             >
-              <p className="text-sm text-slate-400">Client</p>
-              <p className="mt-2 font-semibold">{client.clientId}</p>
+              <div className="flex items-center gap-4">
+                <span
+                  className="flex size-12 items-center justify-center rounded-full bg-emerald-400/15 text-sm font-bold text-emerald-300"
+                  aria-hidden="true"
+                >
+                  {client.clientLabel.replace("Client ", "C")}
+                </span>
+                <div>
+                  <h3 className="font-semibold text-slate-100">
+                    {client.clientLabel}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Active coaching assignment
+                  </p>
+                </div>
+                <span className="ml-auto rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                  Active
+                </span>
+              </div>
             </li>
           ))}
         </ul>

@@ -157,7 +157,7 @@ describe("FitPath critical user workflows", () => {
     signInAs("trainer");
     cy.contains("a", "My Clients").click();
     cy.contains("h2", "My Clients").should("be.visible");
-    cy.contains(requiredEnv("assignedClientClerkUserId")).should("be.visible");
+    cy.contains("Client 1").should("be.visible");
   });
 
   it("edit an assigned client plan as TRAINER → saves the change", () => {

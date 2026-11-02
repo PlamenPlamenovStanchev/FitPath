@@ -660,7 +660,7 @@ export function TrainingPlanEditorPage({
                         <option value="">Choose a client</option>
                         {clients.map((client) => (
                           <option key={client.userId} value={client.userId}>
-                            {client.clientId}
+                            {client.clientLabel}
                           </option>
                         ))}
                       </select>

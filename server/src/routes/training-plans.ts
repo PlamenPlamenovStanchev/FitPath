@@ -751,23 +751,21 @@ trainingPlansRouter.get(
         return;
       }
 
-      const [client] = await db
-        .select({ clerkUserId: users.clerkUserId })
-        .from(users)
-        .where(eq(users.id, plan.clientUserId))
-        .limit(1);
-      const [creator] = await db
-        .select({ clerkUserId: users.clerkUserId })
-        .from(users)
-        .where(eq(users.id, plan.createdByUserId))
-        .limit(1);
+      const clientLabel =
+        actor.role === "USER" && plan.clientUserId === actor.id
+          ? "You"
+          : "Client";
+      const trainerLabel =
+        plan.createdByUserId === plan.clientUserId
+          ? null
+          : actor.role === "TRAINER" && plan.createdByUserId === actor.id
+            ? "You"
+            : "Assigned trainer";
       const completePlan = await getCompletePlan(plan);
       const pdf = await createPlanPdf(
         completePlan,
-        client?.clerkUserId ?? plan.clientUserId,
-        plan.createdByUserId === plan.clientUserId
-          ? null
-          : (creator?.clerkUserId ?? plan.createdByUserId),
+        clientLabel,
+        trainerLabel,
       );
 
       response.setHeader("Content-Type", "application/pdf");

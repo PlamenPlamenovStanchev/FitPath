@@ -107,7 +107,7 @@ export type MyTrainerResponse = {
 };
 
 export type TrainerClientsResponse = {
-  clients: Array<{ userId: string; clientId: string }>;
+  clients: Array<{ userId: string; clientLabel: string }>;
 };
 
 export type TrainingPlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED";

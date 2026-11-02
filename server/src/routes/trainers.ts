@@ -265,7 +265,6 @@ trainersRouter.get(
       const clients = await db
         .select({
           userId: users.id,
-          clientId: users.clerkUserId,
         })
         .from(trainerAssignments)
         .innerJoin(users, eq(users.id, trainerAssignments.clientUserId))
@@ -277,7 +276,12 @@ trainersRouter.get(
         )
         .orderBy(asc(trainerAssignments.createdAt));
 
-      response.status(200).json({ clients });
+      response.status(200).json({
+        clients: clients.map((client, index) => ({
+          ...client,
+          clientLabel: `Client ${index + 1}`,
+        })),
+      });
     } catch {
       console.error("Failed to load trainer clients");
       response.status(500).json({ error: "Internal server error" });
