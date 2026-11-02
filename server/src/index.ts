@@ -17,13 +17,18 @@ const app = express();
 app.use(clerkMiddleware());
 app.use(cors({ origin: serverEnv.clientOrigin }));
 app.use(express.json());
+// API responses contain account-specific authorization state. Prevent a
+// browser cache from serving an earlier role or application status.
+app.use((_request, response, next) => {
+  response.setHeader("Cache-Control", "no-store");
+  next();
+});
 
 app.get("/health", (_request, response) => {
   response.json({ status: "ok" });
 });
 
 app.use("/api", meRouter);
-app.use("/api", adminRouter);
 app.use("/api", trainerApplicationsRouter);
 app.use("/api", adminTrainerApplicationsRouter);
 app.use("/api", trainersRouter);
@@ -31,6 +36,10 @@ app.use("/api", trainingPlansRouter);
 app.use("/api", progressRouter);
 app.use("/api", progressPhotosRouter);
 app.use("/api", workoutCompletionsRouter);
+// adminRouter applies ADMIN authorization at router level, so it must be
+// mounted after the non-admin routers rather than intercepting every /api
+// request that follows it.
+app.use("/api", adminRouter);
 
 // Keep parser and unexpected route failures from falling through to Express's
 // development error page, which can include implementation details.

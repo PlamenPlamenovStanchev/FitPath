@@ -226,10 +226,30 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
     const headers = new Headers(init.headers);
     headers.set("Authorization", `Bearer ${token}`);
 
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-      ...init,
-      headers,
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`${apiBaseUrl}${path}`, {
+        ...init,
+        headers,
+        // Account roles and application statuses must always reflect the
+        // server's current authorization state.
+        cache: "no-store",
+      });
+    } catch (error) {
+      // Fetch rejects only when the request never receives an HTTP response
+      // (for example, an unavailable API or a proxy/network failure). Convert
+      // it to the same application error shape used for server responses so
+      // upload forms do not replace the useful explanation with a generic one.
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+
+      throw new ApiRequestError(
+        "We could not reach the FitPath API. Check that the server is running and try again.",
+        0,
+      );
+    }
 
     if (!response.ok) {
       const errorBody: unknown = await response.json().catch(() => null);
@@ -261,6 +281,7 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
 
     const response = await fetch(`${apiBaseUrl}${path}`, {
       headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
     });
 
     if (!response.ok) {

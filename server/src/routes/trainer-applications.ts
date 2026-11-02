@@ -232,9 +232,14 @@ trainerApplicationsRouter.post(
 
         throw error;
       }
-    } catch {
-      console.error("Failed to create trainer application");
-      response.status(500).json({ error: "Internal server error" });
+    } catch (error) {
+      // The certificate must be stored before an application is created. Keep
+      // the implementation details out of the response, but make this
+      // recoverable operational failure distinguishable from a bad form.
+      console.error("Failed to create trainer application", error);
+      response.status(503).json({
+        error: "Certificate storage is temporarily unavailable. Please try again shortly.",
+      });
     }
   },
 );

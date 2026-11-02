@@ -24,14 +24,29 @@ export function requireFitPathRole(...allowedRoles: FitPathRole[]) {
     }
 
     try {
+      // A user can open a protected deep link before /api/me has completed its
+      // lazy synchronization. Ensure an authenticated Clerk account has its
+      // default local USER record before checking its FitPath role.
+      await db
+        .insert(users)
+        .values({ clerkUserId })
+        .onConflictDoNothing({ target: users.clerkUserId });
+
       const [user] = await db
         .select({ role: users.role })
         .from(users)
         .where(eq(users.clerkUserId, clerkUserId))
         .limit(1);
 
-      if (!user || !allowedRoles.includes(user.role)) {
-        response.status(403).json({ error: "Forbidden" });
+      if (!user) {
+        response.status(403).json({ error: "Your FitPath account could not be found." });
+        return;
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        response.status(403).json({
+          error: `This action requires the ${allowedRoles.join(" or ")} role. Your account is currently ${user.role}.`,
+        });
         return;
       }
 
