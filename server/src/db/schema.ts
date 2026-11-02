@@ -51,6 +51,7 @@ export const users = pgTable(
     onboardingCompleted: boolean("onboarding_completed")
       .notNull()
       .default(false),
+    active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -146,29 +147,26 @@ export const trainerApplications = pgTable(
   ],
 );
 
-export const trainerProfiles = pgTable(
-  "trainer_profiles",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .unique()
-      .references(() => users.id, { onDelete: "cascade" }),
-    specialization: text("specialization").notNull(),
-    biography: text("biography").notNull(),
-    profilePhotoObjectKey: text("profile_photo_object_key"),
-    approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
-    // Application update operations must explicitly set this value; no trigger is used.
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const trainerProfiles = pgTable("trainer_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  specialization: text("specialization").notNull(),
+  biography: text("biography").notNull(),
+  profilePhotoObjectKey: text("profile_photo_object_key"),
+  approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  // Application update operations must explicitly set this value; no trigger is used.
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
 
 export const trainerAssignments = pgTable(
   "trainer_assignments",
@@ -241,9 +239,18 @@ export const trainingPlans = pgTable(
       table.status,
     ),
     index("training_plans_created_by_user_idx").on(table.createdByUserId),
-    check("training_plans_title_not_blank", sql`length(btrim(${table.title})) > 0`),
-    check("training_plans_goal_not_blank", sql`length(btrim(${table.goal})) > 0`),
-    check("training_plans_date_range", sql`${table.endDate} >= ${table.startDate}`),
+    check(
+      "training_plans_title_not_blank",
+      sql`length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "training_plans_goal_not_blank",
+      sql`length(btrim(${table.goal})) > 0`,
+    ),
+    check(
+      "training_plans_date_range",
+      sql`${table.endDate} >= ${table.startDate}`,
+    ),
   ],
 );
 
@@ -315,10 +322,7 @@ export const workoutExercises = pgTable(
       "workout_exercises_rest_non_negative",
       sql`${table.restSeconds} IS NULL OR ${table.restSeconds} >= 0`,
     ),
-    check(
-      "workout_exercises_position_positive",
-      sql`${table.position} > 0`,
-    ),
+    check("workout_exercises_position_positive", sql`${table.position} > 0`),
   ],
 );
 
@@ -331,8 +335,10 @@ export const progressEntries = pgTable(
       .references(() => users.id),
     weightKg: numeric("weight_kg", { precision: 5, scale: 2 }).notNull(),
     bmi: numeric("bmi", { precision: 5, scale: 2 }).notNull(),
-    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" })
-      .notNull(),
+    recordedAt: timestamp("recorded_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -357,8 +363,10 @@ export const workoutCompletions = pgTable(
     workoutDayId: uuid("workout_day_id")
       .notNull()
       .references(() => workoutDays.id, { onDelete: "cascade" }),
-    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" })
-      .notNull(),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [
     uniqueIndex("workout_completions_user_day_unique").on(

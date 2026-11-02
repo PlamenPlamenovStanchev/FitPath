@@ -7,6 +7,7 @@ import {
 } from "../auth/authentication.js";
 import { db } from "../db/client.js";
 import { profiles, users } from "../db/schema.js";
+import { requireFitPathRole } from "../auth/authorization.js";
 
 const meRouter = Router();
 
@@ -131,41 +132,47 @@ function serializeProfile(profile: {
   };
 }
 
-meRouter.get("/me", requireAuthenticatedUser, async (request, response) => {
-  const clerkUserId = getAuthenticatedClerkUserId(request);
+meRouter.get(
+  "/me",
+  requireAuthenticatedUser,
+  requireFitPathRole("USER", "TRAINER", "ADMIN"),
+  async (request, response) => {
+    const clerkUserId = getAuthenticatedClerkUserId(request);
 
-  try {
-    await db
-      .insert(users)
-      .values({ clerkUserId })
-      .onConflictDoNothing({ target: users.clerkUserId });
+    try {
+      await db
+        .insert(users)
+        .values({ clerkUserId })
+        .onConflictDoNothing({ target: users.clerkUserId });
 
-    const [result] = await db
-      .select({ ...userResponseFields, ...profileResponseFields })
-      .from(users)
-      .leftJoin(profiles, eq(profiles.userId, users.id))
-      .where(eq(users.clerkUserId, clerkUserId))
-      .limit(1);
+      const [result] = await db
+        .select({ ...userResponseFields, ...profileResponseFields })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(eq(users.clerkUserId, clerkUserId))
+        .limit(1);
 
-    if (!result) {
-      throw new Error("FitPath user was not available after synchronization");
+      if (!result) {
+        throw new Error("FitPath user was not available after synchronization");
+      }
+
+      response.status(200).json({
+        id: result.id,
+        role: result.role,
+        onboardingCompleted: result.onboardingCompleted,
+        profile: result.profileId ? serializeProfile(result) : null,
+      });
+    } catch {
+      console.error("Failed to synchronize FitPath user");
+      response.status(500).json({ error: "Internal server error" });
     }
-
-    response.status(200).json({
-      id: result.id,
-      role: result.role,
-      onboardingCompleted: result.onboardingCompleted,
-      profile: result.profileId ? serializeProfile(result) : null,
-    });
-  } catch {
-    console.error("Failed to synchronize FitPath user");
-    response.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 meRouter.put(
   "/me/onboarding",
   requireAuthenticatedUser,
+  requireFitPathRole("USER"),
   async (request, response) => {
     const validation = validateOnboardingInput(request.body);
 

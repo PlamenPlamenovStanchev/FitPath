@@ -73,6 +73,7 @@ export type AdminUser = {
   id: string;
   role: FitPathUser["role"];
   onboardingCompleted: boolean;
+  active: boolean;
   createdAt: string;
 };
 
@@ -263,10 +264,7 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
             ? "Your session has expired. Please sign in again."
             : "We could not complete this request. Please try again.";
 
-      throw new ApiRequestError(
-        message,
-        response.status,
-      );
+      throw new ApiRequestError(message, response.status);
     }
 
     if (response.status === 204) {
@@ -333,15 +331,29 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       });
     },
     getAdminTrainerApplications: (signal?: AbortSignal) =>
-      request<AdminTrainerApplicationsResponse>("/api/admin/trainer-applications", {
-        signal,
-      }),
+      request<AdminTrainerApplicationsResponse>(
+        "/api/admin/trainer-applications",
+        {
+          signal,
+        },
+      ),
     getAdminOverview: (signal?: AbortSignal) =>
       request<AdminOverview>("/api/admin/overview", { signal }),
     getAdminUsers: (signal?: AbortSignal) =>
       request<AdminUsersResponse>("/api/admin/users", { signal }),
+    deactivateAdminUser: (userId: string) =>
+      request<{ id: string; active: false }>(
+        `/api/admin/users/${userId}/deactivate`,
+        {
+          method: "PATCH",
+        },
+      ),
+    deleteAdminUser: (userId: string) =>
+      request<void>(`/api/admin/users/${userId}`, { method: "DELETE" }),
     getAdminTrainingPlans: (signal?: AbortSignal) =>
-      request<AdminTrainingPlansResponse>("/api/admin/training-plans", { signal }),
+      request<AdminTrainingPlansResponse>("/api/admin/training-plans", {
+        signal,
+      }),
     approveTrainerApplication: (applicationId: string) =>
       request<{ status: "APPROVED" }>(
         `/api/admin/trainer-applications/${applicationId}/approve`,
@@ -353,7 +365,9 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         { method: "PATCH" },
       ),
     downloadTrainerCertificate: (applicationId: string) =>
-      requestBlob(`/api/admin/trainer-applications/${applicationId}/certificate`),
+      requestBlob(
+        `/api/admin/trainer-applications/${applicationId}/certificate`,
+      ),
     getTrainers: (signal?: AbortSignal) =>
       request<TrainersResponse>("/api/trainers", { signal }),
     getMyTrainer: (signal?: AbortSignal) =>
@@ -394,15 +408,21 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         { signal },
       ),
     completeWorkoutDay: (workoutDayId: string, completedAt?: string) =>
-      request<{ completion: WorkoutCompletion }>(`/api/workout-days/${workoutDayId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(completedAt ? { completedAt } : {}),
-      }).then((response) => response.completion),
+      request<{ completion: WorkoutCompletion }>(
+        `/api/workout-days/${workoutDayId}/complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(completedAt ? { completedAt } : {}),
+        },
+      ).then((response) => response.completion),
     undoWorkoutDayCompletion: (workoutDayId: string) =>
-      request<{ workoutDayId: string }>(`/api/workout-days/${workoutDayId}/complete`, {
-        method: "DELETE",
-      }).then(() => undefined),
+      request<{ workoutDayId: string }>(
+        `/api/workout-days/${workoutDayId}/complete`,
+        {
+          method: "DELETE",
+        },
+      ).then(() => undefined),
     getTrainerClientWorkoutCompletions: (
       clientUserId: string,
       signal?: AbortSignal,
@@ -413,7 +433,10 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         { signal },
       ),
     getTrainerClientProgress: (clientUserId: string, signal?: AbortSignal) =>
-      request<ProgressEntriesResponse>(`/api/trainer/clients/${clientUserId}/progress`, { signal }),
+      request<ProgressEntriesResponse>(
+        `/api/trainer/clients/${clientUserId}/progress`,
+        { signal },
+      ),
     getMyProgressPhotos: (signal?: AbortSignal) =>
       request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
     getMyProgress: (signal?: AbortSignal) =>
@@ -438,9 +461,17 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       request<{ id: string }>(`/api/me/progress-photos/${photoId}`, {
         method: "DELETE",
       }).then(() => undefined),
-    getTrainerClientProgressPhotos: (clientUserId: string, signal?: AbortSignal) =>
-      request<ProgressPhotosResponse>(`/api/trainer/clients/${clientUserId}/progress-photos`, { signal }),
+    getTrainerClientProgressPhotos: (
+      clientUserId: string,
+      signal?: AbortSignal,
+    ) =>
+      request<ProgressPhotosResponse>(
+        `/api/trainer/clients/${clientUserId}/progress-photos`,
+        { signal },
+      ),
     getTrainerClientProgressPhoto: (clientUserId: string, photoId: string) =>
-      requestBlob(`/api/trainer/clients/${clientUserId}/progress-photos/${photoId}`),
+      requestBlob(
+        `/api/trainer/clients/${clientUserId}/progress-photos/${photoId}`,
+      ),
   };
 }

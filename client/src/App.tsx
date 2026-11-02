@@ -132,6 +132,8 @@ function ProtectedHome() {
         getAdminTrainerApplications={apiClient.getAdminTrainerApplications}
         getAdminOverview={apiClient.getAdminOverview}
         getAdminUsers={apiClient.getAdminUsers}
+        deactivateAdminUser={apiClient.deactivateAdminUser}
+        deleteAdminUser={apiClient.deleteAdminUser}
         getAdminTrainingPlans={apiClient.getAdminTrainingPlans}
         approveTrainerApplication={apiClient.approveTrainerApplication}
         rejectTrainerApplication={apiClient.rejectTrainerApplication}
@@ -156,7 +158,9 @@ function ProtectedHome() {
         deleteMyProgressPhoto={apiClient.deleteMyProgressPhoto}
         getMyProgress={apiClient.getMyProgress}
         createProgressEntry={apiClient.createProgressEntry}
-        getTrainerClientWorkoutCompletions={apiClient.getTrainerClientWorkoutCompletions}
+        getTrainerClientWorkoutCompletions={
+          apiClient.getTrainerClientWorkoutCompletions
+        }
         getTrainerClientProgress={apiClient.getTrainerClientProgress}
       />
     );

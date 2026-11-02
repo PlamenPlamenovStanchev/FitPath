@@ -48,6 +48,8 @@ type AuthenticatedDashboardProps = {
   getAdminUsers: (
     signal?: AbortSignal,
   ) => Promise<import("../api/client").AdminUsersResponse>;
+  deactivateAdminUser: (userId: string) => Promise<unknown>;
+  deleteAdminUser: (userId: string) => Promise<void>;
   getAdminTrainingPlans: (
     signal?: AbortSignal,
   ) => Promise<import("../api/client").AdminTrainingPlansResponse>;
@@ -161,6 +163,8 @@ export function AuthenticatedDashboard({
   getAdminTrainerApplications,
   getAdminOverview,
   getAdminUsers,
+  deactivateAdminUser,
+  deleteAdminUser,
   getAdminTrainingPlans,
   approveTrainerApplication,
   rejectTrainerApplication,
@@ -351,6 +355,8 @@ export function AuthenticatedDashboard({
                 <AdminPanelPage
                   getOverview={getAdminOverview}
                   getUsers={getAdminUsers}
+                  deactivateUser={deactivateAdminUser}
+                  deleteUser={deleteAdminUser}
                   getPlans={getAdminTrainingPlans}
                   getPlan={getTrainingPlan}
                   getApplications={getAdminTrainerApplications}

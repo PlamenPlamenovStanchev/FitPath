@@ -33,13 +33,22 @@ export function requireFitPathRole(...allowedRoles: FitPathRole[]) {
         .onConflictDoNothing({ target: users.clerkUserId });
 
       const [user] = await db
-        .select({ role: users.role })
+        .select({ role: users.role, active: users.active })
         .from(users)
         .where(eq(users.clerkUserId, clerkUserId))
         .limit(1);
 
       if (!user) {
-        response.status(403).json({ error: "Your FitPath account could not be found." });
+        response
+          .status(403)
+          .json({ error: "Your FitPath account could not be found." });
+        return;
+      }
+
+      if (!user.active) {
+        response
+          .status(403)
+          .json({ error: "This FitPath account has been deactivated." });
         return;
       }
 
