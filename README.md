@@ -10,28 +10,33 @@ plans and progress, while approved trainers support their assigned clients.
 - First-login onboarding and profile-based BMI calculation.
 - Trainer application, approval, discovery, and client-assignment workflows.
 - Authorized training-plan creation, editing, workout completion, and PDF export.
-- Progress measurements, private progress photos, and accessible progress charts.
+- Plan-scoped progress measurements, private progress photos, and accessible
+  weight/completion charts that refresh when the selected plan changes.
+- Trainers can select an assigned client and that client's plan to load only
+  the corresponding progress charts and plans.
+- Admin user lifecycle controls with confirmed deactivation and permanent
+  deletion for non-admin accounts.
 - Unit tests, Cypress E2E coverage, deterministic CI, and scheduled backups.
 
 ## Roles
 
-| Role | Permissions |
-| --- | --- |
-| USER | Manages a personal profile, plans, workout completions, progress, private photos, and trainer selection. |
-| TRAINER | Views active assigned clients and creates or updates their training plans. |
-| ADMIN | Reviews trainer applications and accesses administrative overview, users, and plans. |
+| Role    | Permissions                                                                                                                              |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| USER    | Manages a personal profile, plans, workout completions, plan-scoped progress, private photos, and trainer selection.                     |
+| TRAINER | Views active assigned clients, selects a client's progress/plan, and creates or updates assigned-client training plans.                  |
+| ADMIN   | Reviews trainer applications, accesses administrative overview/users/plans, and can deactivate or permanently delete non-admin accounts. |
 
 Frontend visibility is for usability; the API remains the authorization boundary.
 
 ## Technology Stack
 
-| Area | Technologies |
-| --- | --- |
+| Area     | Technologies                          |
+| -------- | ------------------------------------- |
 | Frontend | React, TypeScript, Vite, Tailwind CSS |
-| Backend | Node.js, Express, TypeScript |
-| Data | PostgreSQL, Neon, Drizzle ORM |
-| Services | Clerk, Cloudflare R2 |
-| Quality | Cypress, GitHub Actions |
+| Backend  | Node.js, Express, TypeScript          |
+| Data     | PostgreSQL, Neon, Drizzle ORM         |
+| Services | Clerk, Cloudflare R2                  |
+| Quality  | Cypress, GitHub Actions               |
 
 ## Architecture
 
@@ -68,18 +73,24 @@ erDiagram
     USERS ||--o{ WORKOUT_COMPLETIONS : records
     WORKOUT_DAYS ||--o{ WORKOUT_COMPLETIONS : completed
     USERS ||--o{ PROGRESS_ENTRIES : records
+    TRAINING_PLANS ||--o{ PROGRESS_ENTRIES : scopes
     USERS ||--o{ PROGRESS_PHOTOS : owns
 
     USERS {
       uuid id PK
       text clerk_user_id UK
       enum role
+      boolean active
     }
     TRAINING_PLANS {
       uuid id PK
       uuid client_user_id FK
       uuid created_by_user_id FK
       enum status
+    }
+    PROGRESS_ENTRIES {
+      uuid user_id FK
+      uuid training_plan_id FK
     }
     TRAINER_ASSIGNMENTS {
       uuid trainer_user_id FK
@@ -90,13 +101,20 @@ erDiagram
 
 Important constraints include one profile per user, one active trainer per
 client, unique workout-day/exercise positions within a plan, and one workout
-completion per user/workout day.
+completion per user/workout day. A progress entry may be associated with one
+training plan; deleting that plan clears this optional association rather than
+deleting the measurement.
 
 ## Security and Data Boundaries
 
 - Clerk verifies authenticated requests; the server derives the current Clerk
   identity from verified request state rather than request-body ownership fields.
 - The Express API enforces role, ownership, and active trainer-assignment checks.
+- Deactivated accounts are rejected by API authorization and blocked in Clerk.
+- Admins cannot deactivate or delete themselves or another administrator.
+- Permanent account deletion removes the Clerk identity and FitPath records,
+  then attempts cleanup of associated private uploads. Destructive actions
+  require a UI confirmation.
 - R2 buckets are private. Object keys are generated server-side and private
   certificates/progress photos are delivered only through authorized API routes.
 - Client-side role visibility improves navigation only; it is not relied upon
@@ -104,13 +122,13 @@ completion per user/workout day.
 
 ## API Highlights
 
-| Area | Representative routes |
-| --- | --- |
-| Identity/profile | `GET /api/me`, `PUT /api/me/onboarding` |
-| Trainers | `/api/trainers`, `/api/me/trainer`, `/api/trainer/clients` |
-| Plans | `/api/training-plans`, `/api/training-plans/:id/pdf` |
-| Progress | `/api/me/progress`, `/api/me/progress-photos` |
-| Administration | `/api/admin/overview`, `/api/admin/trainer-applications` |
+| Area             | Representative routes                                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Identity/profile | `GET /api/me`, `PUT /api/me/onboarding`                                                                                     |
+| Trainers         | `/api/trainers`, `/api/me/trainer`, `/api/trainer/clients`                                                                  |
+| Plans            | `/api/training-plans`, `/api/training-plans/:id/pdf`                                                                        |
+| Progress         | `/api/me/progress?planId=…`, `/api/me/progress-photos`, `/api/trainer/clients/:clientId/progress?planId=…`                  |
+| Administration   | `/api/admin/overview`, `/api/admin/trainer-applications`, `/api/admin/users/:userId/deactivate`, `/api/admin/users/:userId` |
 
 All `/api` resource routes except the health check require the appropriate
 authentication and server-side authorization. Consult the route files under
@@ -163,6 +181,11 @@ npm run db:migrate
 `db:migrate` applies committed migrations. Do not use `drizzle-kit push` and do
 not modify already-applied migrations.
 
+The current migration set includes user account lifecycle support
+(`0004_admin_user_lifecycle`) and optional training-plan links for progress
+measurements (`0005_plan_scoped_progress`). Apply migrations before starting a
+version that contains these features.
+
 ## Testing
 
 ```bash
@@ -175,6 +198,10 @@ npm run build
 The Cypress suite is documented in [docs/e2e-testing.md](docs/e2e-testing.md).
 Run it only against its dedicated Clerk, Neon, and R2 test environment. The
 manual `Full E2E` GitHub Actions workflow is separate from main CI.
+
+Critical-workflow coverage includes authenticated progress recording and the
+trainer client-progress screen's authorized data load. In the application,
+plan/client selection reloads chart requests with the selected IDs.
 
 The final end-to-end manual verification steps are in
 [docs/manual-regression-checklist.md](docs/manual-regression-checklist.md).
