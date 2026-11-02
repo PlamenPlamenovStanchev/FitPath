@@ -34,6 +34,21 @@ function isUuid(value: unknown): value is string {
   );
 }
 
+function parseCompletionTimestamp(value: unknown): Date | null {
+  if (value === undefined || value === null) {
+    return new Date();
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const completedAt = new Date(value);
+  return Number.isNaN(completedAt.getTime()) || completedAt.getTime() > Date.now()
+    ? null
+    : completedAt;
+}
+
 function isUniqueViolation(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -82,6 +97,15 @@ workoutCompletionsRouter.post(
       return;
     }
 
+    const completedAt = parseCompletionTimestamp(
+      (request.body as { completedAt?: unknown } | undefined)?.completedAt,
+    );
+
+    if (!completedAt) {
+      response.status(400).json({ error: "Completion date must be today or earlier." });
+      return;
+    }
+
     try {
       const user = await getLocalUser(getAuthenticatedClerkUserId(request));
 
@@ -104,7 +128,7 @@ workoutCompletionsRouter.post(
 
       const [completion] = await db
         .insert(workoutCompletions)
-        .values({ userId: user.id, workoutDayId: workoutDay.workoutDayId, completedAt: new Date() })
+        .values({ userId: user.id, workoutDayId: workoutDay.workoutDayId, completedAt })
         .returning(completionFields);
 
       if (!completion) {

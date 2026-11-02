@@ -390,9 +390,11 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       requestBlob(`/api/training-plans/${planId}/pdf`),
     getMyWorkoutCompletions: (signal?: AbortSignal) =>
       request<WorkoutCompletionsResponse>("/api/me/workout-completions", { signal }),
-    completeWorkoutDay: (workoutDayId: string) =>
+    completeWorkoutDay: (workoutDayId: string, completedAt?: string) =>
       request<{ completion: WorkoutCompletion }>(`/api/workout-days/${workoutDayId}/complete`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(completedAt ? { completedAt } : {}),
       }).then((response) => response.completion),
     undoWorkoutDayCompletion: (workoutDayId: string) =>
       request<{ workoutDayId: string }>(`/api/workout-days/${workoutDayId}/complete`, {
@@ -407,6 +409,12 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
     getMyProgress: (signal?: AbortSignal) =>
       request<ProgressEntriesResponse>("/api/me/progress", { signal }),
+    createProgressEntry: (payload: { weightKg: number; recordedAt?: string }) =>
+      request<{ entry: ProgressEntry }>("/api/me/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then((response) => response.entry),
     uploadProgressPhoto: (photo: File) => {
       const formData = new FormData();
       formData.append("photo", photo);

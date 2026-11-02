@@ -53,9 +53,17 @@ type TrainingPlanEditorPageProps = {
   getWorkoutCompletions: (
     signal?: AbortSignal,
   ) => Promise<WorkoutCompletionsResponse>;
-  completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
+  completeWorkoutDay: (
+    workoutDayId: string,
+    completedAt?: string,
+  ) => Promise<WorkoutCompletion>;
   undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
 };
+
+function localDateInputValue(date = new Date()): string {
+  const timezoneOffsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+}
 
 function newExercise(): DraftExercise {
   return {
@@ -243,6 +251,8 @@ export function TrainingPlanEditorPage({
   >({});
   const [completionActionWorkoutDayId, setCompletionActionWorkoutDayId] =
     useState<string | null>(null);
+  const [completionDateByWorkoutDayId, setCompletionDateByWorkoutDayId] =
+    useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -473,7 +483,11 @@ export function TrainingPlanEditorPage({
           return next;
         });
       } else {
-        const completion = await completeWorkoutDay(workoutDayId);
+        const completionDate = completionDateByWorkoutDayId[workoutDayId] ?? localDateInputValue();
+        const completion = await completeWorkoutDay(
+          workoutDayId,
+          `${completionDate}T12:00:00.000Z`,
+        );
         setCompletionByWorkoutDayId((current) => ({
           ...current,
           [workoutDayId]: completion,
@@ -703,6 +717,25 @@ export function TrainingPlanEditorPage({
                           </div>
                           <div className="flex gap-2">
                             {user.role === "USER" && editingPlanId && (
+                              <div className="flex items-end gap-2">
+                                {!completionByWorkoutDayId[day.key] && (
+                                  <label className="text-xs font-medium text-slate-300">
+                                    Completed on
+                                    <input
+                                      className="mt-1 block rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                                      type="date"
+                                      max={localDateInputValue()}
+                                      value={completionDateByWorkoutDayId[day.key] ?? localDateInputValue()}
+                                      disabled={completionActionWorkoutDayId !== null}
+                                      onChange={(event) =>
+                                        setCompletionDateByWorkoutDayId((current) => ({
+                                          ...current,
+                                          [day.key]: event.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </label>
+                                )}
                               <button
                                 className="rounded-md border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-60"
                                 type="button"
@@ -717,6 +750,7 @@ export function TrainingPlanEditorPage({
                                     ? "Undo completion"
                                     : "Mark complete"}
                               </button>
+                              </div>
                             )}
                             <OrderButton
                               label="Move day up"

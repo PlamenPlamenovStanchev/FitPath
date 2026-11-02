@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ApiRequestError,
   type ProgressPhoto,
+  type ProgressEntry,
   type ProgressEntriesResponse,
   type ProgressPhotosResponse,
   type WorkoutCompletionsResponse,
@@ -12,12 +13,21 @@ import { ProgressCharts } from "./ProgressCharts";
 const maximumPhotoSizeBytes = 5 * 1024 * 1024;
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+function localDateInputValue(date = new Date()): string {
+  const timezoneOffsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+}
+
 type ProgressPhotosPageProps = {
   getPhotos: (signal?: AbortSignal) => Promise<ProgressPhotosResponse>;
   uploadPhoto: (photo: File) => Promise<ProgressPhoto>;
   getPhoto: (photoId: string) => Promise<Blob>;
   deletePhoto: (photoId: string) => Promise<void>;
   getProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
+  createProgressEntry: (payload: {
+    weightKg: number;
+    recordedAt?: string;
+  }) => Promise<ProgressEntry>;
   getCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
 };
 
@@ -36,6 +46,7 @@ export function ProgressPhotosPage({
   getPhoto,
   deletePhoto,
   getProgress,
+  createProgressEntry,
   getCompletions,
 }: ProgressPhotosPageProps) {
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
@@ -44,6 +55,10 @@ export function ProgressPhotosPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [weightKg, setWeightKg] = useState("");
+  const [measurementDate, setMeasurementDate] = useState(localDateInputValue);
+  const [isRecordingWeight, setIsRecordingWeight] = useState(false);
+  const [chartRefreshKey, setChartRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -162,6 +177,42 @@ export function ProgressPhotosPage({
     }
   }
 
+  async function handleRecordWeight(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsedWeight = Number(weightKg);
+
+    if (!Number.isFinite(parsedWeight) || parsedWeight < 20 || parsedWeight > 500) {
+      setError("Enter a weight between 20 and 500 kg.");
+      return;
+    }
+
+    if (!measurementDate || measurementDate > localDateInputValue()) {
+      setError("Choose today or an earlier date.");
+      return;
+    }
+
+    setError(null);
+    setIsRecordingWeight(true);
+    try {
+      await createProgressEntry({
+        weightKg: parsedWeight,
+        // Noon UTC avoids a date moving to the previous day during timezone
+        // conversion while keeping one measurement per selected calendar day.
+        recordedAt: `${measurementDate}T12:00:00.000Z`,
+      });
+      setWeightKg("");
+      setChartRefreshKey((current) => current + 1);
+    } catch (requestError) {
+      setError(
+        requestError instanceof ApiRequestError
+          ? requestError.message
+          : "We could not record your weight.",
+      );
+    } finally {
+      setIsRecordingWeight(false);
+    }
+  }
+
   return (
     <section className="py-8 sm:py-10">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
@@ -176,7 +227,51 @@ export function ProgressPhotosPage({
       <ProgressCharts
         getProgress={getProgress}
         getCompletions={getCompletions}
+        refreshKey={chartRefreshKey}
       />
+
+      <section className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <h3 className="text-xl font-semibold">Record your weight</h3>
+        <p className="mt-1 text-sm text-slate-400">
+          Choose a day and add its measurement. Updating the same day replaces
+          that day’s prior weight.
+        </p>
+        <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => void handleRecordWeight(event)}>
+          <label className="block text-sm font-medium" htmlFor="progress-weight">
+            Weight (kg)
+            <input
+              className="mt-2 block w-40 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+              id="progress-weight"
+              type="number"
+              min="20"
+              max="500"
+              step="0.1"
+              value={weightKg}
+              disabled={isRecordingWeight}
+              onChange={(event) => setWeightKg(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm font-medium" htmlFor="progress-date">
+            Date
+            <input
+              className="mt-2 block rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+              id="progress-date"
+              type="date"
+              max={localDateInputValue()}
+              value={measurementDate}
+              disabled={isRecordingWeight}
+              onChange={(event) => setMeasurementDate(event.target.value)}
+            />
+          </label>
+          <button
+            className="rounded-md bg-emerald-400 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+            type="submit"
+            disabled={isRecordingWeight}
+          >
+            {isRecordingWeight ? "Recording…" : "Save measurement"}
+          </button>
+        </form>
+      </section>
 
       <h3 className="mt-10 text-xl font-semibold">Progress photos</h3>
       <form

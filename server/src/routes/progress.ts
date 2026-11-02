@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { Router } from "express";
 
 import {
@@ -32,6 +32,17 @@ function isUuid(value: unknown): value is string {
 function calculateBmi(weightKg: number, heightCm: number): number {
   const heightMeters = heightCm / 100;
   return Math.round((weightKg / (heightMeters * heightMeters)) * 10) / 10;
+}
+
+function dayBounds(value: Date): { start: Date; end: Date } {
+  const start = new Date(Date.UTC(
+    value.getUTCFullYear(),
+    value.getUTCMonth(),
+    value.getUTCDate(),
+  ));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
 }
 
 function serializeProgress(entry: {
@@ -152,6 +163,39 @@ progressRouter.post("/me/progress", requireAuthenticatedUser, async (request, re
     }
 
     const bmi = calculateBmi(parsedInput.value.weightKg, heightCm);
+    const { start, end } = dayBounds(parsedInput.value.recordedAt);
+    const [existingEntry] = await db
+      .select({ id: progressEntries.id })
+      .from(progressEntries)
+      .where(
+        and(
+          eq(progressEntries.userId, user.id),
+          gte(progressEntries.recordedAt, start),
+          lt(progressEntries.recordedAt, end),
+        ),
+      )
+      .orderBy(desc(progressEntries.recordedAt))
+      .limit(1);
+
+    if (existingEntry) {
+      const [updatedEntry] = await db
+        .update(progressEntries)
+        .set({
+          weightKg: parsedInput.value.weightKg.toFixed(2),
+          bmi: bmi.toFixed(1),
+          recordedAt: parsedInput.value.recordedAt,
+        })
+        .where(eq(progressEntries.id, existingEntry.id))
+        .returning(progressFields);
+
+      if (!updatedEntry) {
+        throw new Error("Progress entry update did not return a result");
+      }
+
+      response.status(200).json({ entry: serializeProgress(updatedEntry) });
+      return;
+    }
+
     const [entry] = await db
       .insert(progressEntries)
       .values({

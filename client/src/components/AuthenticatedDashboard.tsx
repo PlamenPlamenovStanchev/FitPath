@@ -75,7 +75,10 @@ type AuthenticatedDashboardProps = {
   getMyWorkoutCompletions: (
     signal?: AbortSignal,
   ) => Promise<WorkoutCompletionsResponse>;
-  completeWorkoutDay: (workoutDayId: string) => Promise<WorkoutCompletion>;
+  completeWorkoutDay: (
+    workoutDayId: string,
+    completedAt?: string,
+  ) => Promise<WorkoutCompletion>;
   undoWorkoutDayCompletion: (workoutDayId: string) => Promise<void>;
   getMyProgressPhotos: (
     signal?: AbortSignal,
@@ -84,6 +87,10 @@ type AuthenticatedDashboardProps = {
   getMyProgressPhoto: (photoId: string) => Promise<Blob>;
   deleteMyProgressPhoto: (photoId: string) => Promise<void>;
   getMyProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
+  createProgressEntry: (payload: {
+    weightKg: number;
+    recordedAt?: string;
+  }) => Promise<ProgressEntriesResponse["entries"][number]>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -166,6 +173,7 @@ export function AuthenticatedDashboard({
   getMyProgressPhoto,
   deleteMyProgressPhoto,
   getMyProgress,
+  createProgressEntry,
 }: AuthenticatedDashboardProps) {
   const visibleNavigation =
     user.role === "USER"
@@ -284,6 +292,7 @@ export function AuthenticatedDashboard({
                   getPhoto={getMyProgressPhoto}
                   deletePhoto={deleteMyProgressPhoto}
                   getProgress={getMyProgress}
+                  createProgressEntry={createProgressEntry}
                   getCompletions={getMyWorkoutCompletions}
                 />
               ) : (

@@ -9,10 +9,27 @@ import {
 type ProgressChartsProps = {
   getProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
   getCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
+  refreshKey?: number;
 };
 
 type WeightPoint = { date: Date; weightKg: number };
-type CompletionBucket = { week: Date; count: number; percentage: number };
+type CompletionBucket = { week: Date; count: number };
+
+function getDailyWeightPoints(entries: ProgressEntriesResponse["entries"]): WeightPoint[] {
+  const byDay = new Map<string, WeightPoint>();
+
+  for (const entry of entries) {
+    const point = { date: new Date(entry.recordedAt), weightKg: entry.weightKg };
+    const key = point.date.toISOString().slice(0, 10);
+    const existing = byDay.get(key);
+
+    if (!existing || point.date.getTime() > existing.date.getTime()) {
+      byDay.set(key, point);
+    }
+  }
+
+  return [...byDay.values()].sort((left, right) => left.date.getTime() - right.date.getTime());
+}
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
@@ -36,10 +53,8 @@ function getCompletionBuckets(completedAt: string[]): CompletionBucket[] {
     counts.set(key, bucket);
   }
 
-  const total = completedAt.length;
   return [...counts.values()]
-    .sort((left, right) => left.week.getTime() - right.week.getTime())
-    .map((bucket) => ({ ...bucket, percentage: (bucket.count / total) * 100 }));
+    .sort((left, right) => left.week.getTime() - right.week.getTime());
 }
 
 function ChartFrame({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
@@ -98,12 +113,8 @@ function WeightChart({ points }: { points: WeightPoint[] }) {
 
 function CompletionChart({ buckets }: { buckets: CompletionBucket[] }) {
   if (buckets.length === 0) {
-    return <ChartFrame title="Workout completion over time" description="Weekly share of your recorded workout completions."><EmptyChart message="Complete a workout day to start this chart." /></ChartFrame>;
+    return <ChartFrame title="Workout completion over time" description="Completed workout days by calendar week."><EmptyChart message="Complete a workout day to start this chart." /></ChartFrame>;
   }
-  if (buckets.length === 1) {
-    return <ChartFrame title="Workout completion over time" description="Weekly share of your recorded workout completions."><EmptyChart message="Complete workout days in another week to compare weekly activity." /></ChartFrame>;
-  }
-
   const width = 640;
   const height = 280;
   const padding = { top: 20, right: 20, bottom: 52, left: 45 };
@@ -111,24 +122,25 @@ function CompletionChart({ buckets }: { buckets: CompletionBucket[] }) {
   const plotHeight = height - padding.top - padding.bottom;
   const slotWidth = plotWidth / buckets.length;
   const barWidth = Math.min(42, slotWidth * 0.65);
+  const maximumCount = Math.max(...buckets.map((bucket) => bucket.count), 1);
 
   return (
-    <ChartFrame title="Workout completion over time" description="Each week’s percentage share of all recorded workout completions. This is activity distribution, not planned-workout adherence.">
+    <ChartFrame title="Workout completion over time" description="Completed workout days by calendar week.">
       <svg className="mt-5 h-auto w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="completion-chart-title completion-chart-description">
         <title id="completion-chart-title">Workout completion over time</title>
-        <desc id="completion-chart-description">A bar chart showing the percentage share of recorded workout completions for each week.</desc>
-        {[0, 50, 100].map((value) => {
-          const y = padding.top + ((100 - value) / 100) * plotHeight;
-          return <g key={value}><line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#334155" /><text x={padding.left - 8} y={y + 4} fill="#94a3b8" fontSize="11" textAnchor="end">{value}%</text></g>;
+        <desc id="completion-chart-description">A bar chart showing completed workout days for each calendar week.</desc>
+        {[0, maximumCount].map((value) => {
+          const y = padding.top + ((maximumCount - value) / maximumCount) * plotHeight;
+          return <g key={value}><line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#334155" /><text x={padding.left - 8} y={y + 4} fill="#94a3b8" fontSize="11" textAnchor="end">{value}</text></g>;
         })}
         {buckets.map((bucket, index) => {
-          const heightOfBar = (bucket.percentage / 100) * plotHeight;
+          const heightOfBar = (bucket.count / maximumCount) * plotHeight;
           const x = padding.left + index * slotWidth + (slotWidth - barWidth) / 2;
           const y = padding.top + plotHeight - heightOfBar;
-          return <g key={bucket.week.toISOString()}><rect x={x} y={y} width={barWidth} height={heightOfBar} rx="4" fill="#34d399"><title>{`Week of ${formatDate(bucket.week)}: ${bucket.percentage.toFixed(0)}% (${bucket.count} completions)`}</title></rect><text x={x + barWidth / 2} y={height - 18} fill="#94a3b8" fontSize="11" textAnchor="middle">{formatDate(bucket.week)}</text></g>;
+          return <g key={bucket.week.toISOString()}><rect x={x} y={y} width={barWidth} height={heightOfBar} rx="4" fill="#34d399"><title>{`Week of ${formatDate(bucket.week)}: ${bucket.count} completed workout days`}</title></rect><text x={x + barWidth / 2} y={height - 18} fill="#94a3b8" fontSize="11" textAnchor="middle">{formatDate(bucket.week)}</text></g>;
         })}
       </svg>
-      <ChartTable headings={["Week of", "Completion share"]} rows={buckets.map((bucket) => [formatDate(bucket.week), `${bucket.percentage.toFixed(0)}% (${bucket.count})`])} />
+      <ChartTable headings={["Week of", "Completed days"]} rows={buckets.map((bucket) => [formatDate(bucket.week), String(bucket.count)])} />
     </ChartFrame>
   );
 }
@@ -141,7 +153,7 @@ function ChartTable({ headings, rows }: { headings: string[]; rows: string[][] }
   return <table className="sr-only"><caption>Chart data</caption><thead><tr>{headings.map((heading) => <th key={heading}>{heading}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.join("-")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>)}</tbody></table>;
 }
 
-export function ProgressCharts({ getProgress, getCompletions }: ProgressChartsProps) {
+export function ProgressCharts({ getProgress, getCompletions, refreshKey = 0 }: ProgressChartsProps) {
   const [weightPoints, setWeightPoints] = useState<WeightPoint[] | null>(null);
   const [completionBuckets, setCompletionBuckets] = useState<CompletionBucket[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -150,12 +162,17 @@ export function ProgressCharts({ getProgress, getCompletions }: ProgressChartsPr
     const controller = new AbortController();
     void Promise.all([getProgress(controller.signal), getCompletions(controller.signal)])
       .then(([progress, completions]) => {
-        setWeightPoints(progress.entries.map((entry) => ({ date: new Date(entry.recordedAt), weightKg: entry.weightKg })).sort((left, right) => left.date.getTime() - right.date.getTime()));
+        setWeightPoints(getDailyWeightPoints(progress.entries));
         setCompletionBuckets(getCompletionBuckets(completions.completions.map((completion) => completion.completedAt)));
       })
-      .catch((requestError: unknown) => setError(requestError instanceof ApiRequestError ? requestError.message : "We could not load chart data."));
+      .catch((requestError: unknown) => {
+        // React development mode deliberately aborts an initial effect while
+        // checking cleanup behavior. That is not a chart-data failure.
+        if (controller.signal.aborted) return;
+        setError(requestError instanceof ApiRequestError ? requestError.message : "We could not load chart data.");
+      });
     return () => controller.abort();
-  }, [getCompletions, getProgress]);
+  }, [getCompletions, getProgress, refreshKey]);
 
   if (error) return <p className="mt-8 text-sm text-rose-300" role="alert">{error}</p>;
   if (!weightPoints || !completionBuckets) return <p className="mt-8 text-slate-300" aria-live="polite">Loading progress charts…</p>;
