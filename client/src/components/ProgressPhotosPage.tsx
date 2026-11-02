@@ -24,10 +24,14 @@ type ProgressPhotosPageProps = {
   uploadPhoto: (photo: File) => Promise<ProgressPhoto>;
   getPhoto: (photoId: string) => Promise<Blob>;
   deletePhoto: (photoId: string) => Promise<void>;
-  getProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
+  getProgress: (
+    signal?: AbortSignal,
+    planId?: string,
+  ) => Promise<ProgressEntriesResponse>;
   createProgressEntry: (payload: {
     weightKg: number;
     recordedAt?: string;
+    trainingPlanId?: string;
   }) => Promise<ProgressEntry>;
   getCompletions: (
     signal?: AbortSignal,
@@ -199,7 +203,11 @@ export function ProgressPhotosPage({
     event.preventDefault();
     const parsedWeight = Number(weightKg);
 
-    if (!Number.isFinite(parsedWeight) || parsedWeight < 20 || parsedWeight > 500) {
+    if (
+      !Number.isFinite(parsedWeight) ||
+      parsedWeight < 20 ||
+      parsedWeight > 500
+    ) {
       setError("Enter a weight between 20 and 500 kg.");
       return;
     }
@@ -217,6 +225,7 @@ export function ProgressPhotosPage({
         // Noon UTC avoids a date moving to the previous day during timezone
         // conversion while keeping one measurement per selected calendar day.
         recordedAt: `${measurementDate}T12:00:00.000Z`,
+        trainingPlanId: selectedPlanId || undefined,
       });
       setWeightKg("");
       setChartRefreshKey((current) => current + 1);
@@ -242,23 +251,32 @@ export function ProgressPhotosPage({
         fitness journey.
       </p>
 
-      <ProgressCharts
-        getProgress={getProgress}
-        getCompletions={(signal) => getCompletions(signal, selectedPlanId || undefined)}
-        refreshKey={chartRefreshKey}
-      />
-
       <label className="mt-8 block max-w-md text-sm font-medium">
-        Completion chart plan
+        Plan
         <select
+          aria-label="Progress plan"
           className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
           value={selectedPlanId}
           onChange={(event) => setSelectedPlanId(event.target.value)}
         >
           <option value="">All plans</option>
-          {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.title}</option>)}
+          {plans.map((plan) => (
+            <option key={plan.id} value={plan.id}>
+              {plan.title}
+            </option>
+          ))}
         </select>
       </label>
+
+      <ProgressCharts
+        getProgress={(signal) =>
+          getProgress(signal, selectedPlanId || undefined)
+        }
+        getCompletions={(signal) =>
+          getCompletions(signal, selectedPlanId || undefined)
+        }
+        refreshKey={chartRefreshKey}
+      />
 
       <section className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-5">
         <h3 className="text-xl font-semibold">Record your weight</h3>
@@ -266,8 +284,14 @@ export function ProgressPhotosPage({
           Choose a day and add its measurement. Updating the same day replaces
           that day’s prior weight.
         </p>
-        <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => void handleRecordWeight(event)}>
-          <label className="block text-sm font-medium" htmlFor="progress-weight">
+        <form
+          className="mt-4 flex flex-wrap items-end gap-3"
+          onSubmit={(event) => void handleRecordWeight(event)}
+        >
+          <label
+            className="block text-sm font-medium"
+            htmlFor="progress-weight"
+          >
             Weight (kg)
             <input
               className="mt-2 block w-40 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"

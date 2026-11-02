@@ -194,6 +194,7 @@ export type ProgressEntry = {
   weightKg: number;
   bmi: number;
   recordedAt: string;
+  trainingPlanId: string | null;
 };
 
 export type ProgressEntriesResponse = {
@@ -432,16 +433,27 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         `/api/trainer/clients/${clientUserId}/workout-completions${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
         { signal },
       ),
-    getTrainerClientProgress: (clientUserId: string, signal?: AbortSignal) =>
+    getTrainerClientProgress: (
+      clientUserId: string,
+      signal?: AbortSignal,
+      planId?: string,
+    ) =>
       request<ProgressEntriesResponse>(
-        `/api/trainer/clients/${clientUserId}/progress`,
+        `/api/trainer/clients/${clientUserId}/progress${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
         { signal },
       ),
     getMyProgressPhotos: (signal?: AbortSignal) =>
       request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
-    getMyProgress: (signal?: AbortSignal) =>
-      request<ProgressEntriesResponse>("/api/me/progress", { signal }),
-    createProgressEntry: (payload: { weightKg: number; recordedAt?: string }) =>
+    getMyProgress: (signal?: AbortSignal, planId?: string) =>
+      request<ProgressEntriesResponse>(
+        `/api/me/progress${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
+        { signal },
+      ),
+    createProgressEntry: (payload: {
+      weightKg: number;
+      recordedAt?: string;
+      trainingPlanId?: string;
+    }) =>
       request<{ entry: ProgressEntry }>("/api/me/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

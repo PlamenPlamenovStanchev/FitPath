@@ -90,10 +90,14 @@ type AuthenticatedDashboardProps = {
   uploadProgressPhoto: (photo: File) => Promise<ProgressPhoto>;
   getMyProgressPhoto: (photoId: string) => Promise<Blob>;
   deleteMyProgressPhoto: (photoId: string) => Promise<void>;
-  getMyProgress: (signal?: AbortSignal) => Promise<ProgressEntriesResponse>;
+  getMyProgress: (
+    signal?: AbortSignal,
+    planId?: string,
+  ) => Promise<ProgressEntriesResponse>;
   createProgressEntry: (payload: {
     weightKg: number;
     recordedAt?: string;
+    trainingPlanId?: string;
   }) => Promise<ProgressEntriesResponse["entries"][number]>;
   getTrainerClientWorkoutCompletions: (
     clientUserId: string,
@@ -103,6 +107,7 @@ type AuthenticatedDashboardProps = {
   getTrainerClientProgress: (
     clientUserId: string,
     signal?: AbortSignal,
+    planId?: string,
   ) => Promise<ProgressEntriesResponse>;
 };
 
@@ -305,6 +310,7 @@ export function AuthenticatedDashboard({
               user.role === "TRAINER" ? (
                 <TrainerClientProgressPage
                   getPlans={getTrainingPlans}
+                  getClients={getTrainerClients}
                   getProgress={getTrainerClientProgress}
                   getCompletions={getTrainerClientWorkoutCompletions}
                 />

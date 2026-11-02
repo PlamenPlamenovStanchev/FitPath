@@ -333,6 +333,12 @@ export const progressEntries = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
+    trainingPlanId: uuid("training_plan_id").references(
+      () => trainingPlans.id,
+      {
+        onDelete: "set null",
+      },
+    ),
     weightKg: numeric("weight_kg", { precision: 5, scale: 2 }).notNull(),
     bmi: numeric("bmi", { precision: 5, scale: 2 }).notNull(),
     recordedAt: timestamp("recorded_at", {
@@ -346,6 +352,11 @@ export const progressEntries = pgTable(
   (table) => [
     index("progress_entries_user_recorded_at_idx").on(
       table.userId,
+      table.recordedAt,
+    ),
+    index("progress_entries_user_plan_recorded_at_idx").on(
+      table.userId,
+      table.trainingPlanId,
       table.recordedAt,
     ),
     check("progress_entries_weight_positive", sql`${table.weightKg} > 0`),

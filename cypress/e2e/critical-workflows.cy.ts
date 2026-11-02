@@ -158,6 +158,13 @@ describe("FitPath critical user workflows", () => {
     cy.contains("a", "My Clients").click();
     cy.contains("h2", "My Clients").should("be.visible");
     cy.contains("Client 1").should("be.visible");
+    cy.intercept("GET", "/api/trainer/clients/*/progress*").as(
+      "loadClientProgress",
+    );
+    cy.contains("a", "View progress").first().click();
+    cy.wait("@loadClientProgress").its("response.statusCode").should("eq", 200);
+    cy.get('select[aria-label="Client"]').should("contain", "Client 1");
+    cy.contains("label", "Plan").find("select").should("be.visible");
   });
 
   it("edit an assigned client plan as TRAINER → saves the change", () => {
