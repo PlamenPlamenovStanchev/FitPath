@@ -79,10 +79,19 @@ async function getWorkoutDayPlan(workoutDayId: string) {
   return workoutDay ?? null;
 }
 
-async function getCompletionsForUser(userId: string) {
-  return db
+async function getCompletionsForUser(userId: string, planId?: string) {
+  const query = db
     .select(completionFields)
-    .from(workoutCompletions)
+    .from(workoutCompletions);
+
+  if (planId) {
+    return query
+      .innerJoin(workoutDays, eq(workoutDays.id, workoutCompletions.workoutDayId))
+      .where(and(eq(workoutCompletions.userId, userId), eq(workoutDays.trainingPlanId, planId)))
+      .orderBy(desc(workoutCompletions.completedAt));
+  }
+
+  return query
     .where(eq(workoutCompletions.userId, userId))
     .orderBy(desc(workoutCompletions.completedAt));
 }
@@ -206,6 +215,12 @@ workoutCompletionsRouter.get(
   requireAuthenticatedUser,
   requireFitPathRole("USER"),
   async (request, response) => {
+    const planId = typeof request.query.planId === "string" ? request.query.planId : undefined;
+    if (planId && !isUuid(planId)) {
+      response.status(400).json({ error: "Invalid training plan ID." });
+      return;
+    }
+
     try {
       const user = await getLocalUser(getAuthenticatedClerkUserId(request));
 
@@ -214,7 +229,7 @@ workoutCompletionsRouter.get(
         return;
       }
 
-      response.status(200).json({ completions: await getCompletionsForUser(user.id) });
+      response.status(200).json({ completions: await getCompletionsForUser(user.id, planId) });
     } catch {
       console.error("Failed to load workout completions");
       response.status(500).json({ error: "Internal server error" });
@@ -229,6 +244,11 @@ workoutCompletionsRouter.get(
   async (request, response) => {
     if (!isUuid(request.params.clientId)) {
       response.status(404).json({ error: "Client was not found." });
+      return;
+    }
+    const planId = typeof request.query.planId === "string" ? request.query.planId : undefined;
+    if (planId && !isUuid(planId)) {
+      response.status(400).json({ error: "Invalid training plan ID." });
       return;
     }
 
@@ -270,7 +290,7 @@ workoutCompletionsRouter.get(
         }
       }
 
-      response.status(200).json({ completions: await getCompletionsForUser(client.id) });
+      response.status(200).json({ completions: await getCompletionsForUser(client.id, planId) });
     } catch {
       console.error("Failed to load client workout completions");
       response.status(500).json({ error: "Internal server error" });

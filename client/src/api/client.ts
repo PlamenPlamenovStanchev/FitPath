@@ -388,8 +388,11 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       request<void>(`/api/training-plans/${planId}`, { method: "DELETE" }),
     downloadTrainingPlanPdf: (planId: string) =>
       requestBlob(`/api/training-plans/${planId}/pdf`),
-    getMyWorkoutCompletions: (signal?: AbortSignal) =>
-      request<WorkoutCompletionsResponse>("/api/me/workout-completions", { signal }),
+    getMyWorkoutCompletions: (signal?: AbortSignal, planId?: string) =>
+      request<WorkoutCompletionsResponse>(
+        `/api/me/workout-completions${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
+        { signal },
+      ),
     completeWorkoutDay: (workoutDayId: string, completedAt?: string) =>
       request<{ completion: WorkoutCompletion }>(`/api/workout-days/${workoutDayId}/complete`, {
         method: "POST",
@@ -400,11 +403,17 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       request<{ workoutDayId: string }>(`/api/workout-days/${workoutDayId}/complete`, {
         method: "DELETE",
       }).then(() => undefined),
-    getTrainerClientWorkoutCompletions: (clientUserId: string, signal?: AbortSignal) =>
+    getTrainerClientWorkoutCompletions: (
+      clientUserId: string,
+      signal?: AbortSignal,
+      planId?: string,
+    ) =>
       request<WorkoutCompletionsResponse>(
-        `/api/trainer/clients/${clientUserId}/workout-completions`,
+        `/api/trainer/clients/${clientUserId}/workout-completions${planId ? `?planId=${encodeURIComponent(planId)}` : ""}`,
         { signal },
       ),
+    getTrainerClientProgress: (clientUserId: string, signal?: AbortSignal) =>
+      request<ProgressEntriesResponse>(`/api/trainer/clients/${clientUserId}/progress`, { signal }),
     getMyProgressPhotos: (signal?: AbortSignal) =>
       request<ProgressPhotosResponse>("/api/me/progress-photos", { signal }),
     getMyProgress: (signal?: AbortSignal) =>

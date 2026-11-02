@@ -156,6 +156,8 @@ function ProtectedHome() {
         deleteMyProgressPhoto={apiClient.deleteMyProgressPhoto}
         getMyProgress={apiClient.getMyProgress}
         createProgressEntry={apiClient.createProgressEntry}
+        getTrainerClientWorkoutCompletions={apiClient.getTrainerClientWorkoutCompletions}
+        getTrainerClientProgress={apiClient.getTrainerClientProgress}
       />
     );
   }

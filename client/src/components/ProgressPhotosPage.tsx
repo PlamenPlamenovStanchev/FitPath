@@ -6,6 +6,7 @@ import {
   type ProgressEntry,
   type ProgressEntriesResponse,
   type ProgressPhotosResponse,
+  type TrainingPlansResponse,
   type WorkoutCompletionsResponse,
 } from "../api/client";
 import { ProgressCharts } from "./ProgressCharts";
@@ -28,7 +29,11 @@ type ProgressPhotosPageProps = {
     weightKg: number;
     recordedAt?: string;
   }) => Promise<ProgressEntry>;
-  getCompletions: (signal?: AbortSignal) => Promise<WorkoutCompletionsResponse>;
+  getCompletions: (
+    signal?: AbortSignal,
+    planId?: string,
+  ) => Promise<WorkoutCompletionsResponse>;
+  getPlans: (signal?: AbortSignal) => Promise<TrainingPlansResponse>;
 };
 
 function validatePhoto(photo: File | null): string | null {
@@ -48,6 +53,7 @@ export function ProgressPhotosPage({
   getProgress,
   createProgressEntry,
   getCompletions,
+  getPlans,
 }: ProgressPhotosPageProps) {
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -59,6 +65,8 @@ export function ProgressPhotosPage({
   const [measurementDate, setMeasurementDate] = useState(localDateInputValue);
   const [isRecordingWeight, setIsRecordingWeight] = useState(false);
   const [chartRefreshKey, setChartRefreshKey] = useState(0);
+  const [plans, setPlans] = useState<TrainingPlansResponse["plans"]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +123,16 @@ export function ProgressPhotosPage({
     },
     [],
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void getPlans(controller.signal)
+      .then((response) => {
+        if (!controller.signal.aborted) setPlans(response.plans);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [getPlans]);
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -226,9 +244,21 @@ export function ProgressPhotosPage({
 
       <ProgressCharts
         getProgress={getProgress}
-        getCompletions={getCompletions}
+        getCompletions={(signal) => getCompletions(signal, selectedPlanId || undefined)}
         refreshKey={chartRefreshKey}
       />
+
+      <label className="mt-8 block max-w-md text-sm font-medium">
+        Completion chart plan
+        <select
+          className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+          value={selectedPlanId}
+          onChange={(event) => setSelectedPlanId(event.target.value)}
+        >
+          <option value="">All plans</option>
+          {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.title}</option>)}
+        </select>
+      </label>
 
       <section className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-5">
         <h3 className="text-xl font-semibold">Record your weight</h3>

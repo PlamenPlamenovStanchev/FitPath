@@ -25,6 +25,7 @@ import { BmiCard } from "./BmiCard";
 import { MyCoachPage } from "./MyCoachPage";
 import { ProgressPhotosPage } from "./ProgressPhotosPage";
 import { TrainerClientsPage } from "./TrainerClientsPage";
+import { TrainerClientProgressPage } from "./TrainerClientProgressPage";
 import { TrainerApplicationPage } from "./TrainerApplicationPage";
 import { TrainingPlanEditorPage } from "./TrainingPlanEditorPage";
 
@@ -74,6 +75,7 @@ type AuthenticatedDashboardProps = {
   downloadTrainingPlanPdf: (planId: string) => Promise<Blob>;
   getMyWorkoutCompletions: (
     signal?: AbortSignal,
+    planId?: string,
   ) => Promise<WorkoutCompletionsResponse>;
   completeWorkoutDay: (
     workoutDayId: string,
@@ -91,6 +93,15 @@ type AuthenticatedDashboardProps = {
     weightKg: number;
     recordedAt?: string;
   }) => Promise<ProgressEntriesResponse["entries"][number]>;
+  getTrainerClientWorkoutCompletions: (
+    clientUserId: string,
+    signal?: AbortSignal,
+    planId?: string,
+  ) => Promise<WorkoutCompletionsResponse>;
+  getTrainerClientProgress: (
+    clientUserId: string,
+    signal?: AbortSignal,
+  ) => Promise<ProgressEntriesResponse>;
 };
 
 const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -174,6 +185,8 @@ export function AuthenticatedDashboard({
   deleteMyProgressPhoto,
   getMyProgress,
   createProgressEntry,
+  getTrainerClientWorkoutCompletions,
+  getTrainerClientProgress,
 }: AuthenticatedDashboardProps) {
   const visibleNavigation =
     user.role === "USER"
@@ -283,6 +296,20 @@ export function AuthenticatedDashboard({
             }
           />
           <Route
+            path="clients/:clientId/progress"
+            element={
+              user.role === "TRAINER" ? (
+                <TrainerClientProgressPage
+                  getPlans={getTrainingPlans}
+                  getProgress={getTrainerClientProgress}
+                  getCompletions={getTrainerClientWorkoutCompletions}
+                />
+              ) : (
+                <Navigate replace to="/" />
+              )
+            }
+          />
+          <Route
             path="progress"
             element={
               user.role === "USER" ? (
@@ -294,6 +321,7 @@ export function AuthenticatedDashboard({
                   getProgress={getMyProgress}
                   createProgressEntry={createProgressEntry}
                   getCompletions={getMyWorkoutCompletions}
+                  getPlans={getTrainingPlans}
                 />
               ) : (
                 <PlaceholderPage

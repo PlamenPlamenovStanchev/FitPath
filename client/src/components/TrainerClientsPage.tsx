@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { ApiRequestError, type TrainerClientsResponse } from "../api/client";
 
@@ -82,6 +83,12 @@ export function TrainerClientsPage({
                   Active
                 </span>
               </div>
+              <Link
+                className="mt-5 inline-flex rounded-md border border-emerald-400 px-3 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-400/10"
+                to={`/clients/${client.userId}/progress`}
+              >
+                View progress
+              </Link>
             </li>
           ))}
         </ul>
