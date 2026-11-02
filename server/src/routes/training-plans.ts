@@ -946,11 +946,6 @@ trainingPlansRouter.delete("/training-plans/:id", requireAuthenticatedUser, asyn
       return;
     }
 
-    if (actor.role === "USER" && plan.status !== "DRAFT") {
-      response.status(409).json({ error: "Only draft plans may be deleted by users." });
-      return;
-    }
-
     await db.delete(trainingPlans).where(eq(trainingPlans.id, plan.id));
     response.status(204).send();
   } catch {

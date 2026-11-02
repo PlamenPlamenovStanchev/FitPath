@@ -269,6 +269,10 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
       );
     }
 
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
     return (await response.json()) as T;
   }
 
@@ -380,6 +384,8 @@ export function createAuthenticatedApiClient(getToken: GetToken) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }),
+    deleteTrainingPlan: (planId: string) =>
+      request<void>(`/api/training-plans/${planId}`, { method: "DELETE" }),
     downloadTrainingPlanPdf: (planId: string) =>
       requestBlob(`/api/training-plans/${planId}/pdf`),
     getMyWorkoutCompletions: (signal?: AbortSignal) =>

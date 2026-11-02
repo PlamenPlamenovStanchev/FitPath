@@ -145,6 +145,7 @@ function ProtectedHome() {
         getTrainingPlan={apiClient.getTrainingPlan}
         createTrainingPlan={apiClient.createTrainingPlan}
         updateTrainingPlan={apiClient.updateTrainingPlan}
+        deleteTrainingPlan={apiClient.deleteTrainingPlan}
         downloadTrainingPlanPdf={apiClient.downloadTrainingPlanPdf}
         getMyWorkoutCompletions={apiClient.getMyWorkoutCompletions}
         completeWorkoutDay={apiClient.completeWorkoutDay}

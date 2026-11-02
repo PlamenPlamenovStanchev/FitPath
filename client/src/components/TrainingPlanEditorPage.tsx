@@ -47,6 +47,7 @@ type TrainingPlanEditorPageProps = {
     planId: string,
     payload: TrainingPlanPayload,
   ) => Promise<TrainingPlan>;
+  deletePlan: (planId: string) => Promise<void>;
   getTrainerClients: (signal?: AbortSignal) => Promise<TrainerClientsResponse>;
   downloadPlanPdf: (planId: string) => Promise<Blob>;
   getWorkoutCompletions: (
@@ -221,6 +222,7 @@ export function TrainingPlanEditorPage({
   getPlan,
   createPlan,
   updatePlan,
+  deletePlan,
   getTrainerClients,
   downloadPlanPdf,
   getWorkoutCompletions,
@@ -234,6 +236,7 @@ export function TrainingPlanEditorPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [completionByWorkoutDayId, setCompletionByWorkoutDayId] = useState<
     Record<string, WorkoutCompletion>
@@ -420,6 +423,36 @@ export function TrainingPlanEditorPage({
     }
   }
 
+  async function deleteCurrentPlan() {
+    if (!editingPlanId || isDeleting) {
+      return;
+    }
+
+    if (!window.confirm("Delete this training plan? This cannot be undone.")) {
+      return;
+    }
+
+    setError(null);
+    setSaveMessage(null);
+    setIsDeleting(true);
+
+    try {
+      await deletePlan(editingPlanId);
+      setPlans((current) => current.filter((plan) => plan.id !== editingPlanId));
+      setEditingPlanId(null);
+      setDraft(newPlan());
+      setSaveMessage("Training plan deleted.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof ApiRequestError
+          ? requestError.message
+          : "We could not delete this training plan.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   async function toggleWorkoutDayCompletion(workoutDayId: string) {
     if (completionActionWorkoutDayId) {
       return;
@@ -462,6 +495,14 @@ export function TrainingPlanEditorPage({
       ? draft.workoutDays.filter((day) => completionByWorkoutDayId[day.key])
           .length
       : 0;
+  const canDeleteCurrentPlan = Boolean(
+    editingPlanId &&
+      user.role === "USER" &&
+      plans.some(
+        (plan) =>
+          plan.id === editingPlanId && plan.createdByUserId === user.id,
+      ),
+  );
 
   return (
     <section className="py-8 sm:py-10">
@@ -923,6 +964,16 @@ export function TrainingPlanEditorPage({
                       onClick={() => void downloadPdf()}
                     >
                       {isDownloadingPdf ? "Preparing PDF…" : "Download PDF"}
+                    </button>
+                  )}
+                  {canDeleteCurrentPlan && (
+                    <button
+                      className="rounded-md border border-rose-400 px-4 py-2 font-semibold text-rose-200 hover:bg-rose-400/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      type="button"
+                      disabled={isSaving || isDeleting || isDownloadingPdf}
+                      onClick={() => void deleteCurrentPlan()}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete plan"}
                     </button>
                   )}
                 </div>

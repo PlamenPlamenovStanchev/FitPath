@@ -70,6 +70,7 @@ type AuthenticatedDashboardProps = {
     planId: string,
     payload: TrainingPlanPayload,
   ) => Promise<TrainingPlan>;
+  deleteTrainingPlan: (planId: string) => Promise<void>;
   downloadTrainingPlanPdf: (planId: string) => Promise<Blob>;
   getMyWorkoutCompletions: (
     signal?: AbortSignal,
@@ -155,6 +156,7 @@ export function AuthenticatedDashboard({
   getTrainingPlan,
   createTrainingPlan,
   updateTrainingPlan,
+  deleteTrainingPlan,
   downloadTrainingPlanPdf,
   getMyWorkoutCompletions,
   completeWorkoutDay,
@@ -237,6 +239,7 @@ export function AuthenticatedDashboard({
                   getPlan={getTrainingPlan}
                   createPlan={createTrainingPlan}
                   updatePlan={updateTrainingPlan}
+                  deletePlan={deleteTrainingPlan}
                   getTrainerClients={getTrainerClients}
                   downloadPlanPdf={downloadTrainingPlanPdf}
                   getWorkoutCompletions={getMyWorkoutCompletions}
